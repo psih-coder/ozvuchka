@@ -1,7 +1,7 @@
 # 🚀 Озвучка Ai Pro — выкладка в интернет и git
 
 Сайт лежит на **Cloudflare Pages** (бесплатно, постоянный адрес `https://ozvuchka-ai-pro.pages.dev`, HTTPS — нужен для рендера).
-Вход закрыт **Cloudflare Access**: страница открывается только после кода, который приходит на вашу почту.
+Вход **пока открыт** (решение 22.10.2026): ключ Polza, проекты и голоса хранятся только в браузере каждого посетителя, в коде сайта их нет, поисковики сайт не индексируют. Закрыть вход можно позже — шаг 5.
 
 ---
 
@@ -28,7 +28,10 @@ npx wrangler pages project create ozvuchka-ai-pro --production-branch main --for
 ### 4. Первая выкладка
 Двойной щелчок по **`deploy.cmd`**. В конце будет адрес вида `https://ozvuchka-ai-pro.pages.dev`.
 
-### 5. Закрыть паролем (Cloudflare Access)
+### 5. Закрыть паролем (Cloudflare Access) — отложено
+Проще всего через проект: Workers & Pages → ozvuchka-ai-pro → Settings → Access policy → Enable, затем в созданном приложении Access добавить домен без звёздочки `ozvuchka-ai-pro.pages.dev`. Проверка — окно инкогнито должно показать вход Cloudflare.
+
+Или вручную:
 1. https://one.dash.cloudflare.com → Zero Trust. При первом входе: придумать имя команды, выбрать план **Free** (Cloudflare может попросить привязать карту, на бесплатном плане денег не списывает).
 2. **Access → Applications → Add an application → Self-hosted.**
 3. Application domain: `ozvuchka-ai-pro.pages.dev`. Добавьте второй домен: `*.ozvuchka-ai-pro.pages.dev` — это закроет и тестовые адреса выкладок.
