@@ -39,7 +39,6 @@ const GLUE_NEXT = new Set(["не", "ни", "в", "во", "на", "с", "со", "
   "a", "an", "the", "to", "of", "in", "on", "at", "no", "not"]);
 const GLUE_PREV = new Set(["же", "ж", "ли", "ль", "бы", "б", "ка"]);
 const bare = (w) => w.toLowerCase().replace(/[^\p{L}\p{N}'’-]/gu, "");
-const letters = (s) => (s.match(/[\p{L}\p{N}]/gu) || []).length;
 // слова фразы; «GTA 6» держим вместе, «mirrors—Rockstar» — два слова
 const tokens = (text) => text.replace(/\[[^\]\n]{1,30}\]/g, " ").trim().replace(/(\S)([—–])(\S)/g, "$1$2 $3").replace(/(^|\s)([A-ZА-ЯЁ]{2,})\s+(\d+)/g, "$1$2 $3").split(/[ \t\r\n]+/).filter(Boolean);
 
@@ -52,12 +51,12 @@ function cueWords(c, l) {
   let a, b;
   if (v) { a = c.start + v.on[0]; b = c.start + v.on[1]; }
   else { a = c.start; b = c.start + Math.max(0.5, Math.min(slotOf(c), estDur(c, l))); }
-  if (v && toks.length > 20) { const ws = alignByPauses(toks, v, c.start, a, b); if (ws) return ws; }
-  // вес слова — его буквы; после запятой и точки голос делает паузу
+  if (v && toks.length > 20) { const ws = alignByPauses(toks, v, c.start, a, b, l); if (ws) return ws; }
+  // вес слова — его буквы на слух (числа — как произносятся); после запятой и точки голос делает паузу
   const pause = (w) => (/[.!?…]$/.test(w) ? 3.5 : /[,;:—–]$/.test(w) ? 2 : 0);
-  const total = toks.reduce((s, w, i) => s + letters(w) + 1 + (i < toks.length - 1 ? pause(w) : 0), 0) || 1, k = (b - a) / total;
+  const total = toks.reduce((s, w, i) => s + spoken(w, l) + 1 + (i < toks.length - 1 ? pause(w) : 0), 0) || 1, k = (b - a) / total;
   let acc = 0;
-  return toks.map((w, i) => { const st = a + acc * k; acc += letters(w) + 1; const en = a + acc * k; if (i < toks.length - 1) acc += pause(w); return { w, start: st, end: en }; });
+  return toks.map((w, i) => { const st = a + acc * k; acc += spoken(w, l) + 1; const en = a + acc * k; if (i < toks.length - 1) acc += pause(w); return { w, start: st, end: en }; });
 }
 // паузы в голосе (тише порога дольше 0,16 с) — по ним сверяем, где кончается предложение
 function pausesOf(v) {
@@ -71,13 +70,13 @@ function pausesOf(v) {
   }
   return (v.pauses = out);
 }
-function alignByPauses(toks, v, c0, a, b) {
+function alignByPauses(toks, v, c0, a, b, l) {
   const ps = pausesOf(v); if (!ps.length) return null;
   // предложения
   const sent = []; let cur = [];
   toks.forEach((w, i) => { cur.push(w); if (/[.!?…]["»”)]*$/.test(w) || i === toks.length - 1) { sent.push(cur); cur = []; } });
   if (sent.length < 2) return null;
-  const L = sent.map((s) => s.reduce((x, w) => x + letters(w) + 1, 0)), tot = L.reduce((x, y) => x + y, 0), dur = b - a;
+  const L = sent.map((s) => s.reduce((x, w) => x + spoken(w, l) + 1, 0)), tot = L.reduce((x, y) => x + y, 0), dur = b - a;
   // ожидаемая граница по длине текста → ближайшая пауза рядом
   let acc = 0, prev = 0; const bounds = [];
   for (let i = 0; i < sent.length - 1; i++) {
@@ -89,7 +88,7 @@ function alignByPauses(toks, v, c0, a, b) {
   }
   const out = []; let st = a - c0;
   sent.forEach((s, i) => {
-    const en = i < bounds.length ? bounds[i][0] : b - c0, w8 = s.map((w) => letters(w) + 1), t = w8.reduce((x, y) => x + y, 0), k = Math.max(0.05, en - st) / t;
+    const en = i < bounds.length ? bounds[i][0] : b - c0, w8 = s.map((w) => spoken(w, l) + 1), t = w8.reduce((x, y) => x + y, 0), k = Math.max(0.05, en - st) / t;
     let q = st; s.forEach((w, j) => { out.push({ w, start: c0 + q, end: c0 + q + w8[j] * k }); q += w8[j] * k; });
     st = i < bounds.length ? bounds[i][1] : st;
   });

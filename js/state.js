@@ -19,7 +19,7 @@ function effEnd(c) {
 }
 const slotOf = (c) => Math.max(0, effEnd(c) - c.start);
 const baseSpeed = () => +$("vSpeed").value;
-const estDur = (c, l) => c[l].replace(/\s+/g, " ").trim().length / CPS[l] / baseSpeed();
+const estDur = (c, l) => sayLen(c[l], l) / CPS[l] / baseSpeed();
 const voiceKey = (c, l) => { const o = vset(pidFor(c, l)); return [o.model, o.voice, o.style, c[l].trim()].concat(o.extra ? [o.extra] : []).join("¦"); };
 const voiceFresh = (c, l) => c.v[l] && c.v[l].key === voiceKey(c, l);
 const overlaps = (c) => { const i = S.cues.indexOf(c), p = S.cues[i - 1]; return p && p.end != null && p.end > c.start + 0.01; };

@@ -52,8 +52,8 @@ async function recognizeCloud(model, buf, l) {
   // слов нет — делим каждый отрезок между его словами по числу букв
   if (!rec.length) for (const s of d.segments || []) {
     const ws = String(s.text || "").trim().split(/\s+/).filter(Boolean), st = clip(s.start), en = Math.max(st, clip(s.end));
-    const tot = ws.reduce((a, w) => a + (letters(w) || 1), 0); let acc = 0;
-    for (const w of ws) { const a = st + (en - st) * acc / tot; acc += letters(w) || 1; rec.push({ w, start: a, end: st + (en - st) * acc / tot }); }
+    const tot = ws.reduce((a, w) => a + (spoken(w, l) || 1), 0); let acc = 0;
+    for (const w of ws) { const a = st + (en - st) * acc / tot; acc += spoken(w, l) || 1; rec.push({ w, start: a, end: st + (en - st) * acc / tot }); }
   }
   return { rec: rec.filter((r) => /[\p{L}\p{N}]/u.test(r.w)).map((r) => ({ ...r, end: Math.max(r.start, r.end) })), cost: costOf(d) };
 }
@@ -67,18 +67,18 @@ async function recognizeClip(pipe, buf, l) {
     .filter((r) => /[\p{L}\p{N}]/u.test(r.w));
 }
 // распознанное похоже на текст фразы: букв примерно столько же, без зацикливания
-function looksRight(rec, want) {
+function looksRight(rec, want, l) {
   if (!rec.length) return false;
-  const got = rec.reduce((a, r) => a + letters(r.w), 0);
+  const got = rec.reduce((a, r) => a + spoken(r.w, l), 0);
   const cnt = {}; rec.forEach((r) => { const k = r.w.toLowerCase(); cnt[k] = (cnt[k] || 0) + 1; });
   return got > want * 0.55 && got < want * 1.7 && (rec.length < 6 || Math.max(...Object.values(cnt)) / rec.length < 0.3);
 }
 // позиция буквы в тексте → та же доля в распознанном → время (как в «Заводе»)
-function mapWords(toks, rec, dur) {
-  const rl = rec.map((r) => letters(r.w) || 1), rt = rl.reduce((a, b) => a + b, 0), total = toks.reduce((a, w) => a + letters(w), 0) || 1;
+function mapWords(toks, rec, dur, l) {
+  const rl = rec.map((r) => spoken(r.w, l) || 1), rt = rl.reduce((a, b) => a + b, 0), total = toks.reduce((a, w) => a + spoken(w, l), 0) || 1;
   const timeAt = (f) => { let pos = f * rt, acc = 0; for (let i = 0; i < rec.length; i++) { if (pos <= acc + rl[i] || i === rec.length - 1) return rec[i].start + clamp((pos - acc) / rl[i], 0, 1) * (rec[i].end - rec[i].start); acc += rl[i]; } return 0; };
   let pos = 0, prev = 0;
-  const out = toks.map((w) => { const st = Math.min(dur - 0.05, Math.max(prev, timeAt(pos / total))); prev = st; pos += letters(w); return { w, start: st }; });
+  const out = toks.map((w) => { const st = Math.min(dur - 0.05, Math.max(prev, timeAt(pos / total))); prev = st; pos += spoken(w, l); return { w, start: st }; });
   out.forEach((w, i) => { w.end = i + 1 < out.length ? Math.max(w.start + 0.05, out[i + 1].start) : Math.min(dur, Math.max(w.start + 0.2, rec[rec.length - 1].end)); });
   return out;
 }
@@ -93,13 +93,13 @@ async function alignAll(langs = LANGS) {
   for (const { c, l } of jobs) {
     if (S.sStop) throw STOP;
     say(`Слушаю голос: фраза ${++k} из ${jobs.length} (#${num(c)} ${l.toUpperCase()})${cloud ? " — Polza" : ""}`);
-    const v = c.v[l], toks = tokens(c[l]), want = toks.reduce((a, w) => a + letters(w), 0);
+    const v = c.v[l], toks = tokens(c[l]), want = toks.reduce((a, w) => a + spoken(w, l), 0);
     for (const where of order) {
       try {
         let rec;
         if (cloud) { const r = await recognizeCloud(ASR_CLOUD[where], v.buf, l); rec = r.rec; cost += r.cost; }
         else rec = await recognizeClip(await getAsr(where, say), v.buf, l);
-        if (looksRight(rec, want)) { v.words = mapWords(toks, rec, v.len); ok++; break; }
+        if (looksRight(rec, want, l)) { v.words = mapWords(toks, rec, v.len, l); ok++; break; }
         console.warn(`Whisper (${where}) не похож на текст #${num(c)}`, rec);
       } catch (e) {
         if (e.fatal) throw e;   // нет ключа / ключ не подошёл / нет денег — дальше пробовать бессмысленно

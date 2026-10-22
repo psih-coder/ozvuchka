@@ -26,7 +26,7 @@ function sentences(text, maxChars) {
   }
   return res;
 }
-const estText = (t, l) => Math.max(0.6, t.replace(/\s+/g, " ").trim().length / CPS[l] / baseSpeed());
+const estText = (t, l) => Math.max(0.6, sayLen(t, l) / CPS[l] / baseSpeed());
 const round2 = (x) => Math.round(x * 100) / 100;
 const twinVoice = (pid, to) => { const p = prof(pid); if (!p) return null; const i = voicesOf(p.lang).indexOf(p); return voicesOf(to)[i]?.id || null; };
 // фразы с таймкодом стоят на своём месте, остальные раскладываются между ними

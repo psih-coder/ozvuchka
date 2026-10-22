@@ -45,3 +45,70 @@ function logTo(ul, text, cls = "run") {
   $(ul).appendChild(li); return li;
 }
 const done = (li, text, cls = "ok") => { li.className = cls; li.textContent = (cls === "ok" ? "✔ " : "⚠ ") + text; };
+
+// ---- длина слова «на слух»: числа звучат длиннее, чем пишутся («1866» — «тысяча восемьсот шестьдесят шесть») ----
+const letters = (s) => (s.match(/[\p{L}\p{N}]/gu) || []).length;
+const NUMW = {
+  ru: {
+    one: ["", "один", "два", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять"],
+    teen: ["десять", "одиннадцать", "двенадцать", "тринадцать", "четырнадцать", "пятнадцать", "шестнадцать", "семнадцать", "восемнадцать", "девятнадцать"],
+    ten: ["", "", "двадцать", "тридцать", "сорок", "пятьдесят", "шестьдесят", "семьдесят", "восемьдесят", "девяносто"],
+    hun: ["", "сто", "двести", "триста", "четыреста", "пятьсот", "шестьсот", "семьсот", "восемьсот", "девятьсот"],
+    sc: [null, ["тысяча", "тысячи", "тысяч"], ["миллион", "миллиона", "миллионов"], ["миллиард", "миллиарда", "миллиардов"]],
+    zero: "ноль", point: "целых", frac: "десятых",
+    sym: { "%": "процентов", "$": "долларов", "€": "евро", "£": "фунтов", "₽": "рублей", "№": "номер", "°": "градусов", "+": "плюс" }, k: "тысяч",
+  },
+  en: {
+    one: ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"],
+    teen: ["ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"],
+    ten: ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"],
+    hun: null, sc: [null, "thousand", "million", "billion"],
+    zero: "zero", point: "point", frac: "",
+    sym: { "%": "percent", "$": "dollars", "€": "euros", "£": "pounds", "₽": "rubles", "№": "number", "°": "degrees", "+": "plus" }, k: "thousand",
+  },
+};
+const numL = (l) => NUMW[l] || NUMW.en;
+// 0…999 словами
+function words3(n, l) {
+  const W = numL(l), h = Math.floor(n / 100), t = Math.floor(n / 10) % 10, o = n % 10, out = [];
+  if (h) out.push(W.hun ? W.hun[h] : W.one[h] + " hundred");
+  if (t === 1) out.push(W.teen[o]); else { if (t) out.push(W.ten[t]); if (o) out.push(W.one[o]); }
+  return out.join(" ");
+}
+// целое число словами (как его скажет голос); длинные и с нулём впереди — по цифрам
+function numWords(s, l) {
+  const W = numL(l);
+  if (s.length > 12 || (s.length > 1 && s[0] === "0")) return [...s].map((d) => (d === "0" ? W.zero : W.one[+d])).join(" ");
+  const n = +s;
+  if (!n) return W.zero;
+  // английские годы читаются парами: 1866 — eighteen sixty-six
+  if (l === "en" && s.length === 4 && ((n >= 1100 && n < 2000) || n >= 2010) && n % 1000 >= 10) return n % 100 ? words3(Math.floor(n / 100), l) + " " + words3(n % 100, l) : words3(Math.floor(n / 100), l) + " hundred";
+  const out = [];
+  for (let g = 3, rest = n; g >= 0; g--) {
+    const v = Math.floor(rest / 1000 ** g) % 1000; if (!v) continue;
+    if (!g) { out.push(words3(v, l)); continue; }
+    const sc = W.sc[g];
+    if (Array.isArray(sc)) { const d = v % 10, dd = v % 100, f = dd >= 11 && dd <= 14 ? 2 : d === 1 ? 0 : d >= 2 && d <= 4 ? 1 : 2; out.push((v === 1 && g === 1 ? "" : words3(v, l) + " ") + sc[f]); }
+    else out.push(words3(v, l) + " " + sc);
+  }
+  return out.join(" ");
+}
+const wordsLen = (s) => letters(s) + Math.max(0, s.split(" ").filter(Boolean).length - 1);
+// слово → сколько «букв» оно занимает в речи; без цифр и знаков — просто буквы
+function spoken(w, l = "ru") {
+  w = String(w);
+  const W = numL(l);
+  let n = 0;
+  for (const ch of w) if (W.sym[ch]) n += W.sym[ch].length + 1;
+  if (!/\d/.test(w)) return letters(w) + n;
+  let s = w.replace(/[\u00a0\u202f\u2009]/g, "");
+  if (l === "en") s = s.replace(/(\d),(?=\d{3}(?!\d))/g, "$1");   // 1,000,000
+  // «000» после «1» (1 000 000 написано через пробел) — это слово «тысяч», а не «ноль ноль ноль»
+  if (/^0\d\d$/.test(s)) return W.k.length + 1 + (+s ? wordsLen(numWords(String(+s), l)) + 1 : 0) + n;
+  s = s.replace(/(\d+)[.,](\d+)/g, (m, a, b) => ` ${numWords(a, l)} ${W.point} ${l === "en" ? [...b].map((d) => numWords(d, l)).join(" ") : numWords(b, l) + " " + W.frac} `);
+  s = s.replace(/(\d+)[кkK](?![\p{L}])/gu, (m, a) => ` ${numWords(a, l)} ${W.k} `);
+  s = s.replace(/\d+/g, (m) => ` ${numWords(m, l)} `);
+  return wordsLen(s.trim()) + n;
+}
+// длина текста «на слух» в знаках — для оценки, сколько секунд займёт голос
+const sayLen = (t, l) => { t = String(t).replace(/\s+/g, " ").trim(); let n = t.length; for (const w of t.split(" ")) if (/[\d%$€£₽№°]/.test(w)) n += spoken(w, l) - w.length; return n; };
