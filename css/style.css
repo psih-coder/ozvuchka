@@ -465,3 +465,5 @@
     animation: logwait 2.8s linear infinite; }
   @keyframes logwait { to { background-position: -200% 0, 0 0; } }
   @media (prefers-reduced-motion: reduce) { .log:has(li.run) { animation: none; } }
+  /* готово: последняя строка «✔», ничего не выполняется — зелёная рамка */
+  .log:not(:has(li.run)):has(li.ok:last-child) { border-color: rgba(61,220,151,.6); box-shadow: 0 0 0 3px rgba(61,220,151,.09), 0 0 22px rgba(61,220,151,.1); }
