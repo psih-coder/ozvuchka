@@ -7,6 +7,7 @@ function edShow(l) {
   edCur = l; setSeg("edLang", l);
   $("edText").value = S.script[l];
   $("edTr").textContent = `🌐 Перевести на ${otherL(l).toUpperCase()}`;
+  $("edLabelL").textContent = l.toUpperCase(); $("edLabelL").className = "tag-" + l;
   edInfo();
 }
 $("edLang").onclick = (e) => { const b = e.target.closest("button"); if (b) { edShow(b.dataset.v); saveSet(); } };
@@ -66,6 +67,8 @@ function edInfo() {
   const unk = new Set(LANGS.flatMap((l) => parseScript(S.script[l], l).unknown));
   $("edInfo").innerHTML = parts.join(" · ") + ` · кусок видео ${fmt(A, 0)}–${fmt(B, 0)} (${fmt(win, 0)})` +
     (unk.size ? ` · <span style="color:var(--warn)">нет голоса для: ${[...unk].map(esc).join(", ")} — добавьте в шаге 3</span>` : "");
+  const tc = plainText(S.script[edCur], edCur).replace(/\s+/g, " ").trim();
+  $("edLabelInfo").textContent = tc ? `${tc.length} симв. ≈ ${fmt(estText(tc, edCur), 0)} голоса` : "";
   if (typeof stepSums === "function") stepSums();
 }
 $("edClear").onclick = () => { if (S.script[edCur].trim() && !confirm(`Очистить текст ${edCur.toUpperCase()}?`)) return; setScript(edCur, ""); };
