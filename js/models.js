@@ -137,7 +137,8 @@ function vset(pid) {
   let style = "";
   if (m.instr) {
     const ch = CHARS.find((x) => x[0] === $("chr_" + pid).value), ac = ACCENTS.find((x) => x[0] === $("acc_" + pid).value);
-    style = [$("ts_" + pid).value.trim(), ch?.[i], ac?.[i]].filter(Boolean).join(lang === "en" ? ", " : ", ");
+    const ts = $("ts_" + pid).value.trim();
+    style = [STYLE_EN[ts] ?? ts, ch?.[i], ac?.[i]].filter(Boolean).join(", ");
   }
   let voice = $("tv_" + pid).value, extra = "", tag = "";
   if (m.el) {

@@ -18,7 +18,7 @@ $("clearProj").onclick = async () => {
 };
 
 // ================= Старт =================
-initVoices(); restoreSet(); keyPill(); vLabels(); applyAR(); aiCostHint(); subPosLoad(); afLabels(); edShow(edCur);
+initVoices(); if (!LS.get("vo-style-v2", false)) { saveVoices(); LS.set("vo-style-v2", true); } restoreSet(); keyPill(); vLabels(); applyAR(); aiCostHint(); subPosLoad(); afLabels(); edShow(edCur);
 if (!SUB_PRESETS[LS.get("vo-subpreset", "yellow")]) LS.set("vo-subpreset", "yellow"); gLabels(); applyGradePreview();
 document.querySelector(`.preset[data-p="${LS.get("vo-subpreset", "yellow")}"]`)?.classList.add("on");
 accSums();

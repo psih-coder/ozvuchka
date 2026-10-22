@@ -1,7 +1,11 @@
 "use strict";
 // ================= Голоса: карточки =================
 const V_COLORS = ["#ff5fa2", "#3ee6ff", "#ffc94d", "#3ddc97", "#b38cff", "#ff8a3c", "#7aa2ff", "#ff6b6b", "#c6ff4d", "#ff9de2"];
-const STYLE_DEF = { ru: "Говори энергично и увлекательно, как ведущий популярного YouTube-канала", en: "Speak with energy and excitement, like a popular YouTube host" };
+const STYLE_DEF = { ru: "Рассказывает историю", en: "Telling a story" };
+// прежняя манера по умолчанию — у таких голосов ставим новую
+const STYLE_OLD = ["Говори энергично и увлекательно, как ведущий популярного YouTube-канала", "Speak with energy and excitement, like a popular YouTube host"];
+// модели лучше понимают манеру по-английски — стандартные русские подсказки отправляем так
+const STYLE_EN = { "Рассказывает историю": "like someone telling a story", "Telling a story": "like someone telling a story" };
 function cardHtml(p) {
   return `<div class="vcol vcard" data-pid="${p.id}" style="box-shadow: inset 0 3px 0 ${p.color}">
     <div class="vhead"><span class="dot" style="background:${p.color}"></span>
@@ -40,7 +44,8 @@ function mountCard(p, vals = {}) {
 }
 function applyVals(p, vals = {}) {
   if (vals.tm && TTS_MODELS.some((m) => m.id === vals.tm)) $("tm_" + p.id).value = vals.tm;
-  $("ts_" + p.id).value = vals.ts ?? STYLE_DEF[p.lang];
+  // новая манера по умолчанию: один раз — и для пустых полей, дальше пустое поле — ваш выбор
+  $("ts_" + p.id).value = vals.ts == null || STYLE_OLD.includes(vals.ts) || (!vals.ts && !LS.get("vo-style-v2", false)) ? STYLE_DEF[p.lang] : vals.ts;
   if (vals.acc != null) $("acc_" + p.id).value = vals.acc;
   if (vals.chr != null) $("chr_" + p.id).value = vals.chr;
   setFx(p.id, vals.fx || {});
@@ -102,7 +107,7 @@ function delVoice(pid) {
 async function testVoice(pid, btn) {
   const p = prof(pid); btn.disabled = true;
   try {
-    const sample = p.lang === "en" ? "Hey! This is how your video will sound. Pretty cool, right?" : "Привет! Вот так будет звучать твоё видео. Как тебе такая подача?";
+    const sample = p.lang === "en" ? "Hi. This is how my voice will sound. Maybe you would like to choose me?" : "Привет. Вот так будет звучать мой голос. Может, ты хочешь выбрать меня?";
     const { buf, cost } = await tts(pid, sample);
     const f = fxOf(pid), tr = $("vTrim").checked ? trimSilence(buf) : buf;
     const a = document.querySelector(`audio[data-audio="${pid}"]`);
