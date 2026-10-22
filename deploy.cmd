@@ -11,6 +11,9 @@ copy /y _headers dist\ >nul
 xcopy css dist\css\ /e /i /q /y >nul
 xcopy js dist\js\ /e /i /q /y >nul
 xcopy fonts dist\fonts\ /e /i /q /y >nul
+xcopy icons dist\icons\ /e /i /q /y >nul
+copy /y manifest.webmanifest dist\ >nul
+copy /y sw.js dist\ >nul
 
 rem GitHub Pages: just push the committed code
 git push github main

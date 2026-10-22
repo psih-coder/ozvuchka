@@ -101,6 +101,7 @@ npx wrangler pages project create ozvuchka-ai-pro --production-branch main --for
 | `js/style.js` | стиль видео (цвет, слои) |
 | `js/ui.js` | свёрнутые блоки, полный экран |
 | `js/music.js` | фоновая музыка: дорожка, громкость, приглушение под голосом, сведение в рендере |
+| `manifest.webmanifest`, `sw.js`, `icons/` | приложение: описание, офлайн-копия («сначала сеть» — обновляется само), иконки |
 | `js/render.js` | рендер mp4 |
 | `js/main.js` | проект и запуск страницы |
 

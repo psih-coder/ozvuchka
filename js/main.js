@@ -31,3 +31,11 @@ window.addEventListener("resize", () => { drawOverlay(); applyGradePreview(); })
   else { renderAll(); if (p?.music) for (const k of M_KEYS) if (p.music[k] != null) M[k] = p.music[k]; }
   restoreMusic();
 })();
+
+// ================= Приложение =================
+// офлайн-копия + установка на телефон; кнопка в «📁 Проект» появляется, когда браузер готов установить
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) navigator.serviceWorker.register("sw.js").catch(() => {});
+let installEv = null;
+window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installEv = e; $("appInstall").hidden = false; });
+$("appInstall").onclick = async () => { if (!installEv) return; installEv.prompt(); try { await installEv.userChoice; } catch {} installEv = null; $("appInstall").hidden = true; };
+window.addEventListener("appinstalled", () => { $("appInstall").hidden = true; toast("Приложение установлено — иконка «Озвучка» на главном экране"); });
