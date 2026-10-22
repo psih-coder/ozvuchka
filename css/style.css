@@ -423,3 +423,5 @@
   .wrap > .card[id] .stepn { background: var(--acc); box-shadow: 0 0 0 4px color-mix(in srgb, var(--acc) 22%, transparent); }
   .wrap > .card[id] > .accd > summary h2, .wrap > .card[id] > .tabhead h2 { color: color-mix(in srgb, var(--acc) 30%, var(--text)); }
   @media (max-width: 700px) { .wrap > .card[id] { box-shadow: inset 3px 0 0 var(--acc); } }
+  /* «Точное время слов» — свой цвет, чтобы не сливалась с «Субтитрами по голосу из видео» */
+  #alignBtn { background: linear-gradient(135deg, #3ee6ff, #5b9dff); color: #06121c; box-shadow: 0 6px 20px rgba(62,230,255,.22); }
