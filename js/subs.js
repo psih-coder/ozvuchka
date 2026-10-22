@@ -48,6 +48,7 @@ function cueWords(c, l) {
   if (!toks.length) return [];
   const v = voiceFresh(c, l) ? c.v[l] : null;
   if (v?.words && v.words.length === toks.length) return v.words.map((w) => ({ w: w.w, start: c.start + w.start, end: c.start + w.end }));
+  if (!v) { const ow = origWords(c, l, toks); if (ow) return ow; }
   let a, b;
   if (v) { a = c.start + v.on[0]; b = c.start + v.on[1]; }
   else { a = c.start; b = c.start + Math.max(0.5, Math.min(slotOf(c), estDur(c, l))); }

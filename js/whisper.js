@@ -55,7 +55,8 @@ async function recognizeCloud(model, buf, l) {
     const tot = ws.reduce((a, w) => a + (spoken(w, l) || 1), 0); let acc = 0;
     for (const w of ws) { const a = st + (en - st) * acc / tot; acc += spoken(w, l) || 1; rec.push({ w, start: a, end: st + (en - st) * acc / tot }); }
   }
-  return { rec: rec.filter((r) => /[\p{L}\p{N}]/u.test(r.w)).map((r) => ({ ...r, end: Math.max(r.start, r.end) })), cost: costOf(d) };
+  const segs = (d.segments || []).map((s) => ({ start: clip(s.start), end: Math.max(clip(s.start), clip(s.end)), text: String(s.text || "").trim() })).filter((s) => s.text);
+  return { rec: rec.filter((r) => /[\p{L}\p{N}]/u.test(r.w)).map((r) => ({ ...r, end: Math.max(r.start, r.end) })), segs, cost: costOf(d) };
 }
 async function recognizeClip(pipe, buf, l) {
   const a16 = (await resampleTo(buf, 16000)).getChannelData(0);
@@ -117,3 +118,127 @@ $("alignBtn").onclick = async () => {
   try { await alignAll(); } catch (e) { logTo("sLog", e.message, e === STOP ? "warn" : "err"); }
   sBusy = false; $("alignBtn").disabled = false;
 };
+
+// ---- субтитры по голосу из самого видео: звук видео → Whisper → сценарий и фразы с точным временем слов ----
+// звук видео: моно 16 кГц (для Whisper этого достаточно)
+async function videoAudio16k(say) {
+  const mb = await loadMB(), input = new mb.Input({ source: new mb.BlobSource(S.file), formats: mb.ALL_FORMATS });
+  try {
+    const at = await input.getPrimaryAudioTrack();
+    if (!at) throw new Error("В видео нет звуковой дорожки.");
+    if (!(await at.canDecode())) throw new Error("Браузер не может прочитать звук этого видео. Попробуйте mp4 со звуком AAC.");
+    const dur = (await input.computeDuration()) || S.dur, out = [];
+    let blk = [], blkN = 0, sr = at.sampleRate, done16 = 0;
+    // копим ~30 с исходного звука и пересэмплируем кусками — так быстро и без лишней памяти
+    const flush = async () => {
+      if (!blkN) return;
+      const ab = new AudioBuffer({ length: blkN, numberOfChannels: 1, sampleRate: sr }), d = ab.getChannelData(0);
+      let o = 0; for (const p of blk) { d.set(p, o); o += p.length; }
+      const r = (await resampleTo(ab, 16000)).getChannelData(0); out.push(r.slice()); done16 += r.length;
+      blk = []; blkN = 0;
+      say(`Достаю звук из видео: ${Math.min(100, Math.round(done16 / 16000 / Math.max(1, dur) * 100))}%`);
+    };
+    for await (const { buffer } of new mb.AudioBufferSink(at).buffers()) {
+      if (S.sStop) throw STOP;
+      sr = buffer.sampleRate;
+      const n = buffer.length, m = new Float32Array(n), ch = buffer.numberOfChannels;
+      for (let c = 0; c < ch; c++) { const s = buffer.getChannelData(c); for (let i = 0; i < n; i++) m[i] += s[i] / ch; }
+      blk.push(m); blkN += n;
+      if (blkN >= sr * 30) await flush();
+    }
+    await flush();
+    const all = new Float32Array(done16); let o = 0; for (const p of out) { all.set(p, o); o += p.length; }
+    return all;
+  } finally { input.dispose?.(); }
+}
+// режем на куски до maxSec по самым тихим местам, чтобы не разрезать слово
+function splitQuiet(a, maxSec, sr = 16000) {
+  const parts = []; let from = 0;
+  while (a.length - from > maxSec * sr) {
+    // тишину ищем в последней трети куска (но не дальше 20 с от конца) — кусок всегда сдвигается вперёд
+    const hi = from + maxSec * sr, lo = Math.max(from + Math.round(maxSec * sr * 2 / 3), hi - 20 * sr), win = Math.round(0.3 * sr);
+    let best = hi, bestE = Infinity;
+    for (let i = lo; i + win < hi; i += Math.round(0.05 * sr)) { let e = 0; for (let j = i; j < i + win; j += 8) e += a[j] * a[j]; if (e < bestE) { bestE = e; best = i + (win >> 1); } }
+    parts.push([from, best]); from = best;
+  }
+  parts.push([from, a.length]);
+  return parts;
+}
+// слова → фразы: по отрезкам Whisper, а без них — по точкам и паузам
+function phrasesOf(words, segs) {
+  if (segs.length) return segs.map((s) => ({ start: s.start, end: s.end, text: s.text.replace(/\s+/g, " ") }));
+  const out = []; let cur = [];
+  const push = () => { if (cur.length) out.push({ start: cur[0].start, end: cur[cur.length - 1].end, text: cur.map((w) => w.w).join(" ") }); cur = []; };
+  words.forEach((w, i) => {
+    cur.push(w);
+    const nx = words[i + 1], len = w.end - cur[0].start;
+    if (!nx || /[.!?…]["»”)]*$/.test(w.w) || nx.start - w.end > 0.8 || (len > 9 && /[,;:—]$/.test(w.w)) || len > 14) push();
+  });
+  push();
+  return out;
+}
+async function transcribeVideo() {
+  if (!S.file) throw new Error("Сначала загрузите видео в шаге 1.");
+  const l = $("audLang").value, cloud = $("asrWhere").value === "cloud";
+  if ((S.cues.length || S.script[l].trim()) && !confirm(`Сценарий ${l.toUpperCase()} и фразы будут заменены текстом, распознанным из звука видео. Продолжить?`)) throw CANCEL;
+  const li = logTo("sLog", "Достаю звук из видео…"), say = (m) => { li.textContent = "⏳ " + m; };
+  try {
+    const a = await videoAudio16k(say);
+    if (a.length < 16000 * 0.5) throw new Error("Звук в видео слишком короткий.");
+    // облако: кусок до 10 мин (WAV ~19 МБ — под лимит загрузки); в браузере — так же, чтобы видеть прогресс
+    const parts = splitQuiet(a, 600), words = [], segs = [];
+    let cost = 0;
+    for (let i = 0; i < parts.length; i++) {
+      if (S.sStop) throw STOP;
+      const [f, t] = parts[i], off = f / 16000, buf = new AudioBuffer({ length: t - f, numberOfChannels: 1, sampleRate: 16000 });
+      buf.copyToChannel(a.subarray(f, t), 0);
+      say(`Слушаю голос${parts.length > 1 ? `: часть ${i + 1} из ${parts.length}` : ""} (${fmt(off, 0)}–${fmt(t / 16000, 0)})${cloud ? " — Polza" : ""}`);
+      let rec = [], sg = [];
+      if (cloud) {
+        let r = null;
+        for (const m of [ASR_CLOUD.turbo, ASR_CLOUD.w1]) {
+          try { r = await recognizeCloud(m, buf, l); if (r.rec.length) break; }
+          catch (e) { if (e.fatal) throw e; console.warn("Whisper:", m, e); if (m === ASR_CLOUD.w1) throw new Error("Polza не распознала звук: " + (e.message || e)); }
+        }
+        rec = r.rec; sg = r.segs; cost += r.cost;
+      } else {
+        const g = await gpu();
+        rec = await recognizeClip(await getAsr(g.ok ? "gpu" : "cpu", say), buf, l);
+      }
+      words.push(...rec.map((w) => ({ w: w.w, start: +(w.start + off).toFixed(2), end: +(w.end + off).toFixed(2) })));
+      segs.push(...sg.map((s) => ({ ...s, start: s.start + off, end: s.end + off })));
+    }
+    if (!words.length) throw new Error("Речь не распознана — в видео нет голоса или он неразборчив.");
+    const ph = phrasesOf(words, segs).filter((p) => p.text.trim());
+    snap();
+    S.cues = ph.map((p) => { const c = newCue(+p.start.toFixed(2), +Math.max(p.end, p.start + 0.3).toFixed(2)); c[l] = p.text.trim(); return c; });
+    S.arec = { l, words };
+    S.script[l] = S.cues.map((c) => `${fmt(c.start)} - ${fmt(c.end)} ${c[l]}`).join("\n");
+    S.builtSig = null; S.handEdited = false; S.sel = null; S.ver++;
+    edShow(l); setVmode("phrases"); renderAll(); save();
+    $("rVoice").value = "orig"; $("rVoice").dispatchEvent(new Event("change"));
+    done(li, `Распознано: ${S.cues.length} фраз, ${words.length} слов${cost ? ` · ${cost < 0.01 ? "меньше 0,01" : cost.toFixed(2).replace(".", ",")} ₽` : ""}. Текст — в сценарии ${l.toUpperCase()}, рендер — «Оригинальный звук».`);
+  } catch (e) { li.remove(); throw e; }
+}
+$("audBtn").onclick = async () => {
+  if (sBusy) return; sBusy = true; S.sStop = false; $("audBtn").disabled = true;
+  try { await transcribeVideo(); } catch (e) { if (e !== CANCEL) logTo("sLog", e.message, e === STOP ? "warn" : "err"); }
+  sBusy = false; $("audBtn").disabled = false;
+};
+$("audLang").addEventListener("change", saveSet);
+$("rVoice").addEventListener("change", rInfo);
+// время слов фразы без озвучки — из распознанного звука видео
+function origWords(c, l, toks) {
+  if (S.arec?.l !== l) return null;
+  const a = c.start, b = effEnd(c);
+  const rec = S.arec.words.filter((w) => { const m = (w.start + w.end) / 2; return m >= a - 0.05 && m < b + 0.05; }).map((w) => ({ w: w.w, start: Math.max(0, w.start - a), end: Math.max(0, w.end - a) }));
+  if (!rec.length) return null;
+  return mapWords(toks, rec, Math.max(0.1, b - a), l).map((w) => ({ w: w.w, start: a + w.start, end: a + w.end }));
+}
+// правки сценария сразу меняют фразы (пока проект не озвучен — после озвучки фразы собирает «Озвучить»)
+function syncFromScript(l) {
+  if (S.arec?.l !== l || S.cues.some((c) => LANGS.some((x) => c.v[x]))) return;
+  let prev = 0;
+  S.cues = parseScript(S.script[l], l).lines.map((x) => { const st = x.t0 ?? prev, c = newCue(st, x.t1); c[l] = x.text; prev = x.t1 ?? st + 1; return c; });
+  sortCues(); S.ver++; renderAll(); drawOverlay();
+}

@@ -43,7 +43,7 @@ function rInfo() {
   if (!S.file) { $("rInfo").textContent = "Загрузите видео сверху."; return; }
   const [W, H] = outSize(S.w, S.h), langs = $("rVoice").value === "both" ? LANGS : [$("rVoice").value];
   const subs = $("rSubs").value, fast = subs === "none" && curAR() === S.arAuto && $("rRes").value === "src" && gradeNeutral();
-  $("rInfo").innerHTML = `Получится: <b>${W}×${H}</b> (${curAR()}), ${fmt(S.dur)} · ${langs.map((l) => `голос ${l.toUpperCase()}`).join(" и ")} · ` +
+  $("rInfo").innerHTML = `Получится: <b>${W}×${H}</b> (${curAR()}), ${fmt(S.dur)} · ${langs.map((l) => (l === "orig" ? "оригинальный звук без озвучки" : `голос ${l.toUpperCase()}`)).join(" и ")} · ` +
     (subs === "none" ? "без субтитров" : `субтитры ${subs === "same" ? "на языке голоса" : subs.toUpperCase()}`) +
     (gradeNeutral() ? "" : ` · стиль: ${document.querySelector("#gChips .chip.on")?.textContent || "свой"}`) +
     ($("rRes").value !== "src" && +$("rRes").value > Math.min(S.w, S.h) * 1.05 ? ` · <span style="color:var(--warn)">исходник ${S.w}×${S.h} — увеличение не добавит чёткости (помогает «Резкость» в стиле)</span>` : "") +
@@ -60,8 +60,8 @@ $("renderBtn").onclick = async () => {
     if (!S.file) throw new Error("Сначала загрузите видео.");
     const langs = $("rVoice").value === "both" ? LANGS : [$("rVoice").value];
     for (const l of langs) {
-      const sl = $("rSubs").value === "same" ? l : $("rSubs").value;
-      const fast = sl === "none" && curAR() === S.arAuto && $("rRes").value === "src" && gradeNeutral();
+      const sl = $("rSubs").value === "same" ? (l === "orig" ? S.arec?.l || (S.cues.some((c) => c.ru.trim()) ? "ru" : "en") : l) : $("rSubs").value;
+      const fast = l !== "orig" && sl === "none" && curAR() === S.arAuto && $("rRes").value === "src" && gradeNeutral();
       if (fast) { await exportVideo(l, (blob, name) => { logTo("rLog", `Видео ${l.toUpperCase()} готово (без перекодирования): ${name}`, "ok"); showResult(blob, name, l); }, "rBar"); }
       else await renderOne(l, sl);
     }
@@ -73,18 +73,18 @@ function showResult(blob, name, l, toDisk) {
   const url = blob ? URL.createObjectURL(blob) : "";
   box.innerHTML = `${blob ? `<video src="${url}" controls playsinline></video>` : `<div class="big" style="font-size:40px;text-align:center">💾</div>`}
     <div class="meta"><div style="font-size:17px;font-weight:800;color:var(--ok)">✔ Готово: ${esc(name)}</div>
-    <div class="hint">${blob ? `${(blob.size / 1048576).toFixed(1)} МБ` : "Файл записан на диск туда, куда вы выбрали"} · голос ${l.toUpperCase()}${toDisk ? "" : ""}</div>
+    <div class="hint">${blob ? `${(blob.size / 1048576).toFixed(1)} МБ` : "Файл записан на диск туда, куда вы выбрали"} · ${l === "orig" ? "оригинальный звук" : "голос " + l.toUpperCase()}</div>
     ${blob ? `<div class="row"><a class="btn" href="${url}" download="${esc(name)}">⬇ Скачать ещё раз</a></div>` : ""}</div>`;
   $("rOut").prepend(box);
   if (blob) { const a = document.createElement("a"); a.href = url; a.download = name; a.click(); }
 }
 async function renderOne(l, sl) {
   if (!window.VideoEncoder || !window.AudioEncoder) throw new Error("Браузер не умеет кодировать видео — нужен свежий Chrome или Edge.");
-  const list = voiced(l);
+  const list = l === "orig" ? [] : voiced(l), lab = l === "orig" ? "оригинал" : l.toUpperCase();
   const groups = sl === "none" ? [] : groupsFor(sl), so = subOpts();
   if (sl !== "none" && !groups.length) throw new Error(`Нет текста ${sl.toUpperCase()} для субтитров.`);
   await loadSubFonts();
-  const li = logTo("rLog", `Рендер ${l.toUpperCase()}${sl !== "none" ? ` + субтитры ${sl.toUpperCase()}` : ""}: готовлю…`);
+  const li = logTo("rLog", `Рендер ${lab}${sl !== "none" ? ` + субтитры ${sl.toUpperCase()}` : ""}: готовлю…`);
   const mb = await loadMB();
   const input = new mb.Input({ source: new mb.BlobSource(S.file), formats: mb.ALL_FORMATS });
   let output = null, writable = null;
@@ -99,7 +99,8 @@ async function renderOne(l, sl) {
     const srcRate = S.file.size * 8 / Math.max(1, S.dur) * (W * H) / (srcW * srcH);
     const bitrate = Math.round(clamp(Math.max(W * H * Math.min(fps, 60) * +$("rQ").value, srcRate * 1.3), 2.5e6, 80e6));
     if (!(await mb.canEncodeVideo("avc", { width: W, height: H, bitrate }))) throw new Error(`Видеокарта не кодирует H.264 в ${W}×${H}. Выберите размер меньше.`);
-    const origVol = +$("mixOrig").value / 100, useOrig = !!(at && origVol > 0 && (await at.canDecode()));
+    const origVol = l === "orig" ? 1 : +$("mixOrig").value / 100, useOrig = !!(at && origVol > 0 && (await at.canDecode()));
+    if (l === "orig" && !useOrig) throw new Error("В видео нет звука, который браузер может прочитать.");
     const sr = useOrig ? at.sampleRate : 48000, nch = useOrig ? Math.min(2, at.numberOfChannels) : 2;
     if (!(await mb.canEncodeAudio("aac", { numberOfChannels: nch, sampleRate: sr, bitrate: 192e3 }))) throw new Error("Браузер не умеет кодировать звук AAC.");
     const name = `${baseName()}_${l}${sl !== "none" ? "_subs" : ""}_${W}x${H}.mp4`;
@@ -126,7 +127,7 @@ async function renderOne(l, sl) {
       const p = Math.min(vp, ap), now = performance.now(); if (now - lastUi < 250 && p < 1) return; lastUi = now;
       $("rBar").value = p * 100;
       const el = (now - t0) / 1000, eta = p > 0.02 ? el / p - el : 0;
-      li.textContent = `⏳ Рендер ${l.toUpperCase()} ${W}×${H}: ${Math.round(p * 100)}%${eta ? ` · осталось ~${eta > 90 ? Math.round(eta / 60) + " мин" : Math.round(eta) + " с"}` : ""}`;
+      li.textContent = `⏳ Рендер ${lab} ${W}×${H}: ${Math.round(p * 100)}%${eta ? ` · осталось ~${eta > 90 ? Math.round(eta / 60) + " мин" : Math.round(eta) + " с"}` : ""}`;
     };
     // кадр исходника → под формат (обрезка по центру) → субтитры поверх
     const sk = srcW / srcH, k = W / H;
@@ -161,8 +162,8 @@ async function renderOne(l, sl) {
     await Promise.all([videoLoop(), audioLoop()].map((p) => p.catch((e) => { S.rStop = true; throw e; })));
     await output.finalize();
     const secs = Math.round((performance.now() - t0) / 1000);
-    if (writable) { try { await writable.close(); } catch {} done(li, `Рендер ${l.toUpperCase()} готов за ${secs} с — записан на диск (${name})`); showResult(null, name, l, true); }
-    else { done(li, `Рендер ${l.toUpperCase()} готов за ${secs} с`); showResult(new Blob([output.target.buffer], { type: "video/mp4" }), name, l); }
+    if (writable) { try { await writable.close(); } catch {} done(li, `Рендер ${lab} готов за ${secs} с — записан на диск (${name})`); showResult(null, name, l, true); }
+    else { done(li, `Рендер ${lab} готов за ${secs} с`); showResult(new Blob([output.target.buffer], { type: "video/mp4" }), name, l); }
   } catch (e) {
     try { await output?.cancel(); } catch {}
     try { await writable?.abort(); } catch {}

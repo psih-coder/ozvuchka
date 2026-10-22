@@ -36,13 +36,14 @@ function save() {
   saveT = setTimeout(() => LS.set("vo-project", projData()), 300);
 }
 function projData() {
-  return { app: "voiceover", ver: 2, video: { name: S.name, dur: S.dur }, script: S.script, builtSig: S.builtSig || null, handEdited: !!S.handEdited, cues: S.cues.map(({ start, end, ru, en, prompt, vp }) => ({ start, end, ru, en, prompt, vp })) };
+  return { app: "voiceover", ver: 2, video: { name: S.name, dur: S.dur }, script: S.script, builtSig: S.builtSig || null, handEdited: !!S.handEdited, arec: S.arec || null, cues: S.cues.map(({ start, end, ru, en, prompt, vp }) => ({ start, end, ru, en, prompt, vp })) };
 }
 function loadProj(p, quiet) {
   if (!p || !Array.isArray(p.cues)) throw new Error("Это не файл проекта озвучки.");
   snap();
   S.cues = p.cues.map((x) => Object.assign(newCue(+x.start || 0, x.end == null ? null : +x.end), { ru: x.ru || "", en: x.en || "", prompt: x.prompt || "", vp: { ru: x.vp?.ru || null, en: x.vp?.en || null } }));
   if (!S.name && p.video?.name) S.name = p.video.name;
+  S.arec = p.arec?.words?.length ? p.arec : null;
   if (p.script) { S.script = { ru: p.script.ru || "", en: p.script.en || "" }; S.builtSig = p.builtSig || null; S.handEdited = !!p.handEdited; }
   else if (S.cues.length) { S.handEdited = true; for (const l of LANGS) S.script[l] = S.cues.filter((c) => c[l].trim()).map((c) => `${fmt(c.start)} - ${fmt(effEnd(c))} ${c[l]}`).join("\n"); }
   if (typeof edShow === "function") edShow(edCur);
@@ -51,7 +52,7 @@ function loadProj(p, quiet) {
   if (p.video?.name && S.file && p.video.name !== S.file.name) toast(`Проект был для «${p.video.name}» — загружено другое видео`);
 }
 const SET_IDS = ["aiModel", "aiCustom", "aiLangs", "aiTone", "aiCtx", "aiWish", "aiFrames", "aiTimed", "segLen", "scFrom", "scTo", "solV_ru", "solV_en", "fsSplit", "fsPlace", "fsGap", "afDens", "afN", "afSpk", "voRu", "voEn",
-  "vSpeed", "vMax", "vFit", "vTrim", "mixOrig", "volOrig", "volVoice", "ovOn", "arSel", "rateSel", "asrWhere"];
+  "vSpeed", "vMax", "vFit", "vTrim", "mixOrig", "volOrig", "volVoice", "ovOn", "arSel", "rateSel", "asrWhere", "audLang"];
 function saveSet() {
   const o = {}; SET_IDS.forEach((id) => { const el = $(id); o[id] = el.type === "checkbox" ? el.checked : el.value; });
   o.prevLang = prevLang(); o.vmode = vmode(); o.edLang = edCur;

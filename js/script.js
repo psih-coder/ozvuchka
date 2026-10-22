@@ -11,7 +11,7 @@ function edShow(l) {
 }
 $("edLang").onclick = (e) => { const b = e.target.closest("button"); if (b) { edShow(b.dataset.v); saveSet(); } };
 let edT;
-$("edText").addEventListener("input", () => { S.script[edCur] = $("edText").value; clearTimeout(edT); edT = setTimeout(() => { edInfo(); save(); }, 250); });
+$("edText").addEventListener("input", () => { S.script[edCur] = $("edText").value; clearTimeout(edT); edT = setTimeout(() => { syncFromScript(edCur); edInfo(); save(); }, 250); });
 function setScript(l, text) { S.script[l] = text; if (edCur === l) $("edText").value = text; edInfo(); save(); }
 // кусок видео, который озвучиваем (и для ИИ, и для озвучки)
 function rangeOf() {

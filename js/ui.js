@@ -16,7 +16,7 @@ function stepSums() {
 // шаг 6: что получится
 function renderSum() {
   const res = $("rRes").value === "src" ? "как у исходника" : $("rRes").selectedOptions[0].text;
-  $("renderSum").textContent = `· ${$("rVoice").selectedOptions[0].text.replace(" — два файла", "")}, ${res}`;
+  $("renderSum").textContent = `· ${$("rVoice").selectedOptions[0].text.split(" — ")[0]}, ${res}`;
 }
 ["rVoice", "rRes"].forEach((id) => $(id).addEventListener("change", renderSum));
 renderSum();
