@@ -1,5 +1,14 @@
 # 🚀 Озвучка Ai Pro — выкладка в интернет и git
 
+**Основной адрес (без VPN): https://psih-coder.github.io/ozvuchka/** — GitHub Pages, репозиторий https://github.com/psih-coder/ozvuchka (публичный; ключей в коде нет).
+Запасной (Cloudflare, из РФ — только с VPN): https://ozvuchka-ai-pro.pages.dev
+
+`deploy.cmd` выкладывает на оба: `git push github main` (GitHub Pages обновляется сам за ~1 мин) и Cloudflare. Перед выкладкой закоммитьте изменения.
+
+---
+
+## Cloudflare (запасной адрес)
+
 Сайт лежит на **Cloudflare Pages** (бесплатно, постоянный адрес `https://ozvuchka-ai-pro.pages.dev`, HTTPS — нужен для рендера).
 Вход **пока открыт** (решение 22.10.2026): ключ Polza, проекты и голоса хранятся только в браузере каждого посетителя, в коде сайта их нет, поисковики сайт не индексируют. Закрыть вход можно позже — шаг 5.
 
