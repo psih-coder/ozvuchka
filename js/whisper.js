@@ -16,15 +16,20 @@ async function gpu() {
 }
 async function getAsr(where, say) {
   if (asrPipes[where]) return asrPipes[where];
-  const { pipeline } = await loadTF(), g = await gpu(), files = {};
+  const { pipeline } = await loadTF(), g = await gpu(), files = {}, net = new Set();
+  // модель лежит в кэше браузера — просим не удалять его, когда мало места
+  try { await navigator.storage?.persist?.(); } catch {}
   asrPipes[where] = await pipeline("automatic-speech-recognition", "onnx-community/whisper-small_timestamped", {
     device: where === "gpu" ? "webgpu" : "wasm",
     dtype: where === "gpu" ? { encoder_model: g.f16 ? "fp16" : "fp32", decoder_model_merged: g.f16 ? "fp16" : "fp32" } : "q8",
     progress_callback: (p) => {
+      // «download» приходит только когда файла нет в кэше; «progress» — и при скачивании, и при чтении из кэша
+      if (p.status === "download") { net.add(p.file); return; }
       if (p.status !== "progress" || !p.total) return;
       files[p.file] = [p.loaded, p.total];
       let a = 0, b = 0; for (const [x, y] of Object.values(files)) { a += x; b += y; }
-      say(`Скачиваю Whisper (только первый раз): ${(a / 1e6).toFixed(0)} из ${(b / 1e6).toFixed(0)} МБ`);
+      const mb = `${(a / 1e6).toFixed(0)} из ${(b / 1e6).toFixed(0)} МБ`;
+      say(net.size ? `Скачиваю Whisper (только первый раз): ${mb}` : `Загружаю Whisper из памяти браузера: ${mb}`);
     },
   });
   return asrPipes[where];
