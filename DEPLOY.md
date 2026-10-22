@@ -19,9 +19,11 @@ npx wrangler login
 
 ### 3. Создать проект Pages
 ```
-npx wrangler pages project create ozvuchka-ai-pro --production-branch main
+npx wrangler pages project create ozvuchka-ai-pro --production-branch main --force
 ```
-Если имя занято — придумайте другое и поменяйте `--project-name` в `deploy.cmd`.
+`--force` нужен только здесь, один раз: с 2026 года Cloudflare по умолчанию переводит Pages в Workers, а этот флаг создаёт обычный проект Pages с адресом `*.pages.dev`. Если имя занято — придумайте другое и поменяйте `--project-name` в `deploy.cmd`.
+
+✅ Уже сделано 22.10.2026: проект `ozvuchka-ai-pro` создан, сайт выложен на https://ozvuchka-ai-pro.pages.dev
 
 ### 4. Первая выкладка
 Двойной щелчок по **`deploy.cmd`**. В конце будет адрес вида `https://ozvuchka-ai-pro.pages.dev`.
