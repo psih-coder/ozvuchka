@@ -441,3 +441,6 @@
   .tracks .btn.sm { padding: 4px 10px; font-size: 12.5px; }
 
   @media (max-width: 520px) { .vmodes > .hint { flex-basis: 100%; } }
+  /* кнопка «Озвучить» — по центру, подсказка строкой под ней */
+  .gorow { justify-content: center; text-align: center; }
+  .gorow > .hint { flex-basis: 100%; }
