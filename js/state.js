@@ -2,6 +2,9 @@
 // ================= Состояние =================
 const V = $("vid");
 const S = { ver: 0, file: null, url: "", name: "", dur: 0, w: 0, h: 0, arAuto: "16:9", cues: [], sel: null, nextId: 1, aiStop: false, vStop: false, tab: "manual" };
+// фоновая музыка: at — где в видео начинается, from/to — какой кусок трека звучит; vol, приглушение под голосом, плавные края
+const M = { file: null, name: "", buf: null, peaks: null, at: 0, from: 0, to: 0, vol: 0.35, duck: true, duckLvl: 0.3, fi: 1, fo: 2 };
+const M_KEYS = ["name", "at", "from", "to", "vol", "duck", "duckLvl", "fi", "fo"];
 const newCue = (start, end = null) => ({ id: S.nextId++, start, end, ru: "", en: "", prompt: "", vp: { ru: null, en: null }, v: { ru: null, en: null } });
 // голоса (их может быть сколько угодно); у каждого свой язык
 let VOICES = [];
@@ -36,7 +39,7 @@ function save() {
   saveT = setTimeout(() => LS.set("vo-project", projData()), 300);
 }
 function projData() {
-  return { app: "voiceover", ver: 2, video: { name: S.name, dur: S.dur }, script: S.script, builtSig: S.builtSig || null, handEdited: !!S.handEdited, arec: S.arec || null, cues: S.cues.map(({ start, end, ru, en, prompt, vp }) => ({ start, end, ru, en, prompt, vp })) };
+  return { app: "voiceover", ver: 2, video: { name: S.name, dur: S.dur }, script: S.script, builtSig: S.builtSig || null, handEdited: !!S.handEdited, arec: S.arec || null, music: M.buf ? Object.fromEntries(M_KEYS.map((k) => [k, M[k]])) : null, cues: S.cues.map(({ start, end, ru, en, prompt, vp }) => ({ start, end, ru, en, prompt, vp })) };
 }
 function loadProj(p, quiet) {
   if (!p || !Array.isArray(p.cues)) throw new Error("Это не файл проекта озвучки.");
@@ -44,6 +47,7 @@ function loadProj(p, quiet) {
   S.cues = p.cues.map((x) => Object.assign(newCue(+x.start || 0, x.end == null ? null : +x.end), { ru: x.ru || "", en: x.en || "", prompt: x.prompt || "", vp: { ru: x.vp?.ru || null, en: x.vp?.en || null } }));
   if (!S.name && p.video?.name) S.name = p.video.name;
   S.arec = p.arec?.words?.length ? p.arec : null;
+  if (p.music) for (const k of M_KEYS) if (p.music[k] != null) M[k] = p.music[k];
   if (p.script) { S.script = { ru: p.script.ru || "", en: p.script.en || "" }; S.builtSig = p.builtSig || null; S.handEdited = !!p.handEdited; }
   else if (S.cues.length) { S.handEdited = true; for (const l of LANGS) S.script[l] = S.cues.filter((c) => c[l].trim()).map((c) => `${fmt(c.start)} - ${fmt(effEnd(c))} ${c[l]}`).join("\n"); }
   if (typeof edShow === "function") edShow(edCur);

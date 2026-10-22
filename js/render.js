@@ -1,13 +1,20 @@
 "use strict";
 // ================= Рендер =================
 // собирает звук: оригинал (тише) + фразы озвучки на своих местах; asrc — куда писать
-async function mixAudio({ mb, at, asrc, clips, dur, sr, nch, origVol, vg, onProg, isStop }) {
+async function mixAudio({ mb, at, asrc, clips, dur, sr, nch, origVol, vg, onProg, isStop, mus }) {
   let tDone = 0;
   const push = async (chs) => {
     const n = chs[0].length, s0 = Math.round(tDone * sr);
     for (const k of clips) {
       const a = Math.round(k.start * sr) - s0, from = Math.max(0, a), to = Math.min(n, a + k.d.length);
       for (const ch of chs) for (let i = from; i < to; i++) ch[i] += k.d[i - a] * vg;
+    }
+    // музыка: громкость по времени (100 точек в секунду, между ними — плавно)
+    if (mus) for (let i = 0; i < n; i++) {
+      const tg = (s0 + i) / sr, k = tg * 100, q = k | 0; if (q + 1 >= mus.env.length) break;
+      const e = mus.env[q] + (mus.env[q + 1] - mus.env[q]) * (k - q); if (e <= 0) continue;
+      const j = Math.round((tg - mus.at) * sr); if (j < 0 || j >= mus.n) continue;
+      for (let c = 0; c < chs.length; c++) chs[c][i] += mus.chs[Math.min(c, mus.chs.length - 1)][j] * e;
     }
     const ab = new AudioBuffer({ length: n, numberOfChannels: nch, sampleRate: sr });
     chs.forEach((ch, i) => { for (let j = 0; j < n; j++) ch[j] = ch[j] > 1 ? 1 : ch[j] < -1 ? -1 : ch[j]; ab.copyToChannel(ch, i); });
@@ -45,6 +52,7 @@ function rInfo() {
   const subs = $("rSubs").value, fast = subs === "none" && curAR() === S.arAuto && $("rRes").value === "src" && gradeNeutral();
   $("rInfo").innerHTML = `Получится: <b>${W}×${H}</b> (${curAR()}), ${fmt(S.dur)} · ${langs.map((l) => (l === "orig" ? "оригинальный звук без озвучки" : `голос ${l.toUpperCase()}`)).join(" и ")} · ` +
     (subs === "none" ? "без субтитров" : `субтитры ${subs === "same" ? "на языке голоса" : subs.toUpperCase()}`) +
+    (M.buf ? ` · музыка «${esc(M.name)}»` : "") +
     (gradeNeutral() ? "" : ` · стиль: ${document.querySelector("#gChips .chip.on")?.textContent || "свой"}`) +
     ($("rRes").value !== "src" && +$("rRes").value > Math.min(S.w, S.h) * 1.05 ? ` · <span style="color:var(--warn)">исходник ${S.w}×${S.h} — увеличение не добавит чёткости (помогает «Резкость» в стиле)</span>` : "") +
     (fast ? " · <b>быстро, без перекодирования</b>" : ` · перекодирование видеокартой, ~${Math.max(1, Math.round(S.dur / 60 / 3))}–${Math.max(2, Math.round(S.dur / 60 / 1.5))} мин`);
@@ -158,7 +166,8 @@ async function renderOne(l, sl) {
       }
       vsrc.close(); vp = 1; prog();
     };
-    const audioLoop = () => mixAudio({ mb, at: useOrig ? at : null, asrc, clips, dur, sr, nch, origVol, vg, onProg: (p) => { ap = p; prog(); }, isStop: () => S.rStop });
+    const mus = await musicFor(l, sr, nch, dur);
+    const audioLoop = () => mixAudio({ mb, at: useOrig ? at : null, asrc, clips, dur, sr, nch, origVol, vg, mus, onProg: (p) => { ap = p; prog(); }, isStop: () => S.rStop });
     const what = (e, part) => (e === STOP || e === CANCEL || !/decod/i.test(e?.message || e?.name || "") ? e
       : new Error(`Браузер не смог прочитать ${part} этого видео (${e.message}). Обычно так бывает с видео в HEVC/H.265 или после пересжатия мессенджером — попробуйте на компьютере в Chrome или пересохраните видео в mp4 (H.264).`));
     await Promise.all([videoLoop().catch((e) => { throw what(e, "кадры"); }), audioLoop().catch((e) => { throw what(e, "звук"); })].map((p) => p.catch((e) => { S.rStop = true; throw e; })));

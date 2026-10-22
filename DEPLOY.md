@@ -91,6 +91,7 @@ npx wrangler pages project create ozvuchka-ai-pro --production-branch main --for
 | `js/whisper.js` | точное время слов (Whisper в браузере) |
 | `js/style.js` | стиль видео (цвет, слои) |
 | `js/ui.js` | свёрнутые блоки, полный экран |
+| `js/music.js` | фоновая музыка: дорожка, громкость, приглушение под голосом, сведение в рендере |
 | `js/render.js` | рендер mp4 |
 | `js/main.js` | проект и запуск страницы |
 

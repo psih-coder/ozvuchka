@@ -20,7 +20,7 @@ function renderSum() {
 }
 ["rVoice", "rRes"].forEach((id) => $(id).addEventListener("change", renderSum));
 renderSum();
-for (const id of ["scriptAcc", "voiceAcc", "subsAcc", "gradeAcc", "renderAcc", "voicesBox"]) {
+for (const id of ["scriptAcc", "voiceAcc", "musicAcc", "subsAcc", "gradeAcc", "renderAcc", "voicesBox"]) {
   $(id).open = !!LS.get("vo-acc", {})[id];
   $(id).addEventListener("toggle", () => { const o = LS.get("vo-acc", {}); o[id] = $(id).open; LS.set("vo-acc", o); if ($(id).open) requestAnimationFrame(paintPreviews); });
 }
@@ -78,3 +78,14 @@ lockAll();
 const subRanges = () => $("subsAcc").querySelectorAll("input[type=range]");
 $("subUnlock").addEventListener("change", () => subRanges().forEach((r) => { r.disabled = !$("subUnlock").checked; }));
 subRanges().forEach((r) => { r.disabled = true; });
+
+// ---- шапка: меню «Ключ» и «Проект» закрываются касанием мимо них и после выбора пункта ----
+document.addEventListener("click", (e) => { document.querySelectorAll("details.menu[open]").forEach((d) => { if (!d.contains(e.target)) d.open = false; }); });
+document.querySelectorAll("#projMenu .mi").forEach((b) => b.addEventListener("click", () => { $("projMenu").open = false; }));
+$("projClear").onclick = () => $("clearProj").click();
+function keyPill(bal) {
+  const k = $("key").value.trim();
+  $("keyPill").classList.toggle("nokey", !k); $("keyPill").classList.toggle("ok", !!k);
+  $("keyPillT").textContent = !k ? "Ввести ключ" : bal != null ? `${Math.floor(bal)} ₽` : "Ключ";
+}
+$("key").addEventListener("input", () => keyPill());

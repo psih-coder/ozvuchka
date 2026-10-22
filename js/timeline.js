@@ -1,13 +1,14 @@
 "use strict";
 // ================= Таймлайн =================
 const TL = { cv: $("tl"), z: 1, view0: 0, drag: null, W: 0, H: 138, dpr: 1 };
-const Y = { rulerH: 20, thumbY: 20, thumbH: 40, cueY: 66, cueH: 38, ruY: 110, enY: 120, barH: 6 };
+const Y = { rulerH: 20, thumbY: 20, thumbH: 40, cueY: 66, cueH: 38, ruY: 110, enY: 120, barH: 6, muY: 136, muH: 30 };
 const viewDur = () => totalDur() / TL.z;
 const xOf = (t) => (t - TL.view0) / viewDur() * TL.W;
 const tOf = (x) => TL.view0 + x / TL.W * viewDur();
 function sizeTL() {
   const cv = TL.cv, r = cv.getBoundingClientRect(); if (!r.width) return;
   TL.dpr = window.devicePixelRatio || 1; TL.W = r.width;
+  TL.H = M.buf ? 172 : 138; cv.style.height = M.buf ? TL.H + "px" : "";
   cv.width = Math.round(r.width * TL.dpr); cv.height = Math.round(TL.H * TL.dpr);
   drawTL();
 }
@@ -94,6 +95,25 @@ function paintTL() {
   });
   ctx.font = "700 9px 'JetBrains Mono', monospace"; ctx.fillStyle = "rgba(255,95,162,.7)"; ctx.fillText("RU", W - 18, Y.ruY + 3);
   ctx.fillStyle = "rgba(62,230,255,.7)"; ctx.fillText("EN", W - 18, Y.enY + 3);
+  // музыка: своя дорожка с волной; края — обрезка, тело — сдвиг
+  if (M.buf) {
+    const a = M.at, b = M.at + mlen(), x0 = xOf(a), x1 = xOf(b), w = Math.max(3, x1 - x0), sel = TL.drag?.mode?.[0] === "m";
+    if (x1 >= 0 && x0 <= W) {
+      ctx.save(); rr(ctx, x0, Y.muY, w, Y.muH, 7); ctx.fillStyle = sel ? "rgba(61,220,151,.32)" : "rgba(61,220,151,.16)"; ctx.fill();
+      ctx.lineWidth = 1; ctx.strokeStyle = sel ? "rgba(255,255,255,.75)" : "rgba(61,220,151,.6)"; ctx.stroke(); ctx.clip();
+      const pk = M.peaks, mid = Y.muY + Y.muH / 2, dur = M.buf.duration, iv = M.duck ? voiceIv(prevLang() === "en" ? "en" : "ru") : [];
+      ctx.fillStyle = "rgba(61,220,151,.8)";
+      for (let x = Math.max(0, Math.floor(x0)); x < Math.min(W, x1); x += 2) {
+        const t = tOf(x), ft = M.from + (t - a), p = pk[Math.min(pk.length - 1, Math.max(0, Math.floor(ft / dur * pk.length)))] || 0;
+        const h = Math.max(1, p * (Y.muH - 6) * Math.min(1, musicEnv(t, iv) / Math.max(0.05, M.vol)));
+        ctx.fillRect(x, mid - h / 2, 1.5, h);
+      }
+      ctx.fillStyle = "#fff"; if (w > 14) { ctx.fillRect(x0 + 3, Y.muY + 8, 2, Y.muH - 16); ctx.fillRect(x1 - 5, Y.muY + 8, 2, Y.muH - 16); }
+      if (w > 60) { ctx.font = "700 10px Manrope, sans-serif"; ctx.fillStyle = "#eafff4"; ctx.fillText("♪ " + M.name, Math.max(x0, 0) + 9, Y.muY + 9); }
+      ctx.restore();
+    }
+    ctx.font = "700 9px 'JetBrains Mono', monospace"; ctx.fillStyle = "rgba(61,220,151,.75)"; ctx.fillText("♪", W - 14, Y.muY + Y.muH / 2);
+  }
   // курсор
   const px = xOf(V.currentTime || 0);
   if (px >= -2 && px <= W + 2) {
@@ -119,6 +139,14 @@ function hitCue(x, y) {
   }
   return null;
 }
+function hitMusic(x, y) {
+  if (!M.buf || y < Y.muY - 2 || y > Y.muY + Y.muH + 2) return null;
+  const x0 = xOf(M.at), x1 = xOf(M.at + mlen());
+  if (x < x0 - 6 || x > x1 + 6) return null;
+  if (Math.abs(x - x0) <= 8) return "ml";
+  if (Math.abs(x - x1) <= 8) return "mr";
+  return "mb";
+}
 function snapT(t, c) {
   const cands = [V.currentTime || 0];
   for (const o of S.cues) if (o !== c) cands.push(o.start, effEnd(o));
@@ -127,15 +155,24 @@ function snapT(t, c) {
 }
 TL.cv.addEventListener("pointerdown", (e) => {
   if (e.button !== 0) return;
-  const { x, y } = tlPos(e), t = tOf(x), h = hitCue(x, y);
+  const { x, y } = tlPos(e), t = tOf(x), h = hitCue(x, y), hm = hitMusic(x, y);
   TL.cv.setPointerCapture(e.pointerId);
-  if (h) { select(h.c.id, true); TL.drag = { mode: h.part, c: h.c, t0: t, s0: h.c.start, e0: h.c.end, ee0: effEnd(h.c), moved: false }; }
+  if (hm) { TL.drag = { mode: hm, t0: t, at0: M.at, from0: M.from, to0: M.to, moved: false }; drawTL(); }
+  else if (h) { select(h.c.id, true); TL.drag = { mode: h.part, c: h.c, t0: t, s0: h.c.start, e0: h.c.end, ee0: effEnd(h.c), moved: false }; }
   else { TL.drag = { mode: "seek" }; seek(t); }
 });
 TL.cv.addEventListener("pointermove", (e) => {
   const { x, y } = tlPos(e), t = tOf(x), d = TL.drag;
-  if (!d) { const h = hitCue(x, y); TL.cv.style.cursor = h ? (h.part === "body" ? "grab" : "ew-resize") : "text"; return; }
+  if (!d) { const h = hitCue(x, y), hm = hitMusic(x, y); TL.cv.style.cursor = hm ? (hm === "mb" ? "grab" : "ew-resize") : h ? (h.part === "body" ? "grab" : "ew-resize") : "text"; return; }
   if (d.mode === "seek") { seek(t); return; }
+  if (d.mode[0] === "m") {   // музыка: сдвиг или обрезка краёв
+    if (!d.moved) { if (Math.abs(t - d.t0) / viewDur() * TL.W < 3) return; d.moved = true; }
+    const len0 = d.to0 - d.from0, dt = snapT(d.at0 + (t - d.t0), null) - d.at0;
+    if (d.mode === "mb") M.at = clamp(d.at0 + dt, 0, Math.max(0, totalDur() - 0.5));
+    else if (d.mode === "ml") { const ns = clamp(snapT(t, null), Math.max(0, d.at0 - d.from0), d.at0 + len0 - 0.5); M.from = d.from0 + (ns - d.at0); M.at = ns; }
+    else { const ne = clamp(snapT(t, null), d.at0 + 0.5, d.at0 + (M.buf.duration - d.from0)); M.to = d.from0 + (ne - d.at0); }
+    TL.cv.style.cursor = d.mode === "mb" ? "grabbing" : "ew-resize"; drawTL(); return;
+  }
   if (!d.moved) { if (Math.abs(t - d.t0) / viewDur() * TL.W < 3) return; snap(); d.moved = true; }
   const c = d.c, D = totalDur();
   if (d.mode === "body") {
@@ -149,6 +186,7 @@ TL.cv.addEventListener("pointermove", (e) => {
 });
 const tlUp = () => {
   const d = TL.drag; TL.drag = null;
+  if (d && d.mode?.[0] === "m") { if (d.moved) { save(); muUI(); if (!V.paused) scheduleVoices(); } else seek(d.t0); drawTL(); return; }
   if (d && d.moved) { renderAll(); save(); }
   else if (d && d.c) seek(d.t0);   // простой клик по блоку — перемотка туда
 };
@@ -156,6 +194,7 @@ TL.cv.addEventListener("pointerup", tlUp);
 TL.cv.addEventListener("pointercancel", tlUp);
 TL.cv.addEventListener("dblclick", (e) => {
   const { x, y } = tlPos(e), h = hitCue(x, y);
+  if (hitMusic(x, y)) return;
   if (h) { const ta = document.querySelector(`#nowCard textarea`); seek(h.c.start); setTimeout(() => { refreshNow(); ta?.focus(); }, 60); }
   else addCueAt(tOf(x), true);
 });

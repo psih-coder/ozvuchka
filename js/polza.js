@@ -24,7 +24,7 @@ const polza = async (path, body, tries) => (await polzaFetch(path, body, tries))
 const costOf = (d) => +(d?.usage?.cost_rub ?? d?.usage?.cost ?? d?.cost_rub ?? d?.cost ?? 0) || 0;
 $("keyCheck").onclick = async () => {
   say("keyStatus", "Проверяю…");
-  try { const b = await polza("/balance", null, 1); say("keyStatus", `✔ ${(+b.amount).toFixed(2)} ₽`, "ok"); }
+  try { const b = await polza("/balance", null, 1); say("keyStatus", `✔ ${(+b.amount).toFixed(2)} ₽`, "ok"); keyPill(+b.amount); }
   catch (e) { say("keyStatus", e.message, "err"); }
 };
 async function balance() { try { return +(await polza("/balance", null, 1)).amount; } catch { return null; } }

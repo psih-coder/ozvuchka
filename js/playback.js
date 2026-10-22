@@ -119,11 +119,12 @@ function stopVoices() { live.forEach((s) => { try { s.stop(); } catch {} }); liv
 function scheduleVoices() {
   stopVoices();
   const l = prevLang();
-  if (l === "off" || V.paused || !S.file) return;
+  if (V.paused || !S.file || (l === "off" && !M.buf)) return;
   ensureAC();
   const t = V.currentTime, rate = V.playbackRate, now = AC.currentTime + 0.04;
   anchor = { ac: now, v: t, rate };
-  for (const c of S.cues) {
+  scheduleMusic(t, rate, now);
+  if (l !== "off") for (const c of S.cues) {
     const v = c.v[l]; if (!v) continue;
     const d = v.buf.duration; if (c.start + d <= t) continue;
     const s = AC.createBufferSource(); s.buffer = v.buf; s.playbackRate.value = rate; s.connect(vGain);

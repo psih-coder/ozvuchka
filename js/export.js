@@ -91,7 +91,8 @@ async function exportVideo(l, onBlob, bar) {
       }
       vsrc.close(); vp = 1;
     };
-    const audioLoop = () => mixAudio({ mb, at: useOrig ? at : null, asrc, clips, dur, sr, nch, origVol, vg: +$("volVoice").value / 100, onProg: (p) => { ap = p; prog(); }, isStop });
+    const mus = await musicFor(l, sr, nch, dur);
+    const audioLoop = () => mixAudio({ mb, at: useOrig ? at : null, asrc, clips, dur, sr, nch, origVol, vg: +$("volVoice").value / 100, mus, onProg: (p) => { ap = p; prog(); }, isStop });
     await Promise.all([videoLoop(), audioLoop()].map((p) => p.catch((e) => { S.vStop = true; throw e; })));
     await output.finalize();
     li.remove();

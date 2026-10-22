@@ -11,13 +11,26 @@
 <body>
 <header class="top"><div class="in">
   <div class="brand"><div class="logo">🎙</div><div><b>Озвучка Ai Pro</b><small>готовое видео → реплики RU / EN → голос точно в своё время</small></div></div>
-  <div class="keybox">
-    <input type="password" id="key" class="inp" placeholder="Ключ Polza AI (pza_...)" autocomplete="off" title="Нужен для ИИ-сценария и озвучки. Хранится только в этом браузере.">
-    <button class="btn ghost sm" id="keyCheck">Проверить</button>
-    <span id="keyStatus" class="hint"></span>
-  </div>
-  <button class="btn ghost sm" id="projOpen" title="Загрузить сохранённый проект (.json)">📂 Открыть</button>
-  <button class="btn ghost sm" id="projSave" title="Скачать проект: таймкоды и тексты (.json)">💾 Сохранить</button>
+  <details class="menu" id="keyMenu">
+    <summary class="btn ghost sm" id="keyPill" title="Ключ Polza AI">🔑 <span id="keyPillT">Ключ Polza</span></summary>
+    <div class="pop">
+      <b>Ключ Polza AI</b>
+      <div class="keybox">
+        <input type="password" id="key" class="inp" placeholder="pza_..." autocomplete="off">
+        <button class="btn ghost sm" id="keyCheck">Проверить</button>
+      </div>
+      <span id="keyStatus" class="hint"></span>
+      <span class="hint">Нужен для ИИ-сценария, озвучки и Whisper. Хранится только в этом браузере.</span>
+    </div>
+  </details>
+  <details class="menu" id="projMenu">
+    <summary class="btn ghost sm" title="Открыть, сохранить или очистить проект">📁 <span class="mtxt">Проект</span> <span class="dd">▾</span></summary>
+    <div class="pop">
+      <button class="mi" id="projOpen">📂 Открыть проект…<small>файл .json, сохранённый раньше</small></button>
+      <button class="mi" id="projSave">💾 Сохранить проект<small>таймкоды, тексты, настройки музыки — в файл .json</small></button>
+      <button class="mi danger" id="projClear">🗑 Очистить проект<small>видео, сценарий, озвучка, субтитры, музыка</small></button>
+    </div>
+  </details>
   <input type="file" id="projInput" accept=".json,application/json" hidden>
 </div></header>
 
@@ -269,11 +282,40 @@
    </details>
   </section>
 
-  <!-- ============ 4. Субтитры ============ -->
+  <!-- ============ 4. Музыка ============ -->
+  <section class="card" id="musicCard">
+   <details class="accd" id="musicAcc">
+    <summary class="acchead">
+      <h2><span class="stepn">4</span> 🎵 Музыка <span class="accsum" id="musicSum"></span></h2>
+      <span class="chev">▾</span>
+    </summary>
+    <div class="hint" style="margin:10px 0 12px">Фоновый трек под видео. На таймлайне он — отдельная дорожка ♪: тяните её, чтобы сдвинуть, а края — чтобы обрезать.</div>
+    <div class="row">
+      <button class="btn" id="muAdd">🎵 Добавить музыку</button>
+      <span class="hint" id="muName"></span>
+      <button class="btn ghost sm" id="muDel" hidden>🗑 Убрать</button>
+      <input type="file" id="muFile" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac,.flac" hidden>
+    </div>
+    <div id="muBox" hidden>
+      <div class="grid" style="margin-top:14px">
+        <div><label class="f">Громкость: <b id="muVolV" style="color:var(--text)">35%</b></label><input type="range" id="muVol" min="0" max="100" step="1" value="35"></div>
+        <div><label class="f">Под голосом: <b id="muDuckLvlV" style="color:var(--text)">30%</b> от громкости</label><input type="range" id="muDuckLvl" min="0" max="100" step="5" value="30"></div>
+        <div><label class="f">Плавное начало: <b id="muFiV" style="color:var(--text)">1,0 с</b></label><input type="range" id="muFi" min="0" max="5" step="0.5" value="1"></div>
+        <div><label class="f">Плавный конец: <b id="muFoV" style="color:var(--text)">2,0 с</b></label><input type="range" id="muFo" min="0" max="8" step="0.5" value="2"></div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <label class="chk"><input type="checkbox" id="muDuck" checked> Приглушать под голосом</label>
+        <span class="edrange">В видео с <input class="inp tin" id="muAt" title="Где в видео начинается музыка"> · трек с <input class="inp tin" id="muFrom" title="С какого места трека"> по <input class="inp tin" id="muTo" title="До какого места трека"></span>
+      </div>
+    </div>
+   </details>
+  </section>
+
+  <!-- ============ 5. Субтитры ============ -->
   <section class="card" id="subsCard">
    <details class="accd" id="subsAcc">
     <summary class="acchead">
-      <h2><span class="stepn">4</span> 🔤 Субтитры <span class="accsum" id="subsSum"></span></h2>
+      <h2><span class="stepn">5</span> 🔤 Субтитры <span class="accsum" id="subsSum"></span></h2>
       <span class="chev">▾</span>
     </summary>
     <div class="pvlayout">
@@ -361,7 +403,7 @@
   <section class="card" id="gradeCard">
    <details class="accd" id="gradeAcc">
     <summary class="acchead">
-      <h2><span class="stepn">5</span> 🎨 Стиль видео <span class="accsum" id="gradeSum"></span></h2>
+      <h2><span class="stepn">6</span> 🎨 Стиль видео <span class="accsum" id="gradeSum"></span></h2>
       <span class="chev">▾</span>
     </summary>
     <div class="pvlayout">
@@ -395,7 +437,7 @@
   <section class="card" id="renderCard">
    <details class="accd" id="renderAcc">
     <summary class="acchead">
-      <h2><span class="stepn">6</span> 🎬 Рендер — готовое видео <span class="accsum" id="renderSum"></span></h2>
+      <h2><span class="stepn">7</span> 🎬 Рендер — готовое видео <span class="accsum" id="renderSum"></span></h2>
       <span class="chev">▾</span>
     </summary>
     <div class="hint" style="margin-top:10px">Ваше видео + озвучка + субтитры в один mp4. Формат кадра — как выбран над таймлайном.</div>
@@ -475,6 +517,7 @@
 <script src="js/whisper.js"></script>
 <script src="js/style.js"></script>
 <script src="js/ui.js"></script>
+<script src="js/music.js"></script>
 <script src="js/render.js"></script>
 <script src="js/main.js"></script>
 </body>
