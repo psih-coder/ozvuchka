@@ -6,7 +6,14 @@ function accSums() {
   const gp = document.querySelector("#gChips .chip.on");
   $("gradeSum").textContent = "· " + (gp ? G_PRESETS[gp.dataset.gp][0].replace(/^[^\p{L}]+/u, "") : "свои настройки");
 }
-for (const id of ["subsAcc", "gradeAcc", "voicesBox"]) {
+// шаги 2 и 3: сколько текста и сколько озвучено — видно и в свёрнутом виде
+function stepSums() {
+  const sc = LANGS.map((l) => [l, plainText(S.script[l], l).replace(/\s+/g, " ").trim().length]).filter(([, n]) => n).map(([l, n]) => `${l.toUpperCase()} ${n} симв.`);
+  $("scriptSum").textContent = "· " + (sc.length ? sc.join(", ") : "пусто");
+  const vo = LANGS.map((l) => { const w = S.cues.filter((c) => c[l].trim()); return w.length ? `${l.toUpperCase()} ${w.filter((c) => voiceFresh(c, l)).length} из ${w.length}` : ""; }).filter(Boolean);
+  $("voiceSum").textContent = "· " + (vo.length ? "озвучено " + vo.join(", ") : "ещё не озвучено");
+}
+for (const id of ["scriptAcc", "voiceAcc", "subsAcc", "gradeAcc", "voicesBox"]) {
   $(id).open = !!LS.get("vo-acc", {})[id];
   $(id).addEventListener("toggle", () => { const o = LS.get("vo-acc", {}); o[id] = $(id).open; LS.set("vo-acc", o); if ($(id).open) requestAnimationFrame(paintPreviews); });
 }

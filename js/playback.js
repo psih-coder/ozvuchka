@@ -90,6 +90,7 @@ function vSummary() {
       (stale.length ? ` · <span style="color:var(--warn)">изменились: ${stale.length}</span>` : "");
   }
   subInfo(); rInfo();
+  if (typeof stepSums === "function") stepSums();
 }
 let refitN = 0;
 async function refit(onlyPid) {

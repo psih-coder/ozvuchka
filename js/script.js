@@ -66,6 +66,7 @@ function edInfo() {
   const unk = new Set(LANGS.flatMap((l) => parseScript(S.script[l], l).unknown));
   $("edInfo").innerHTML = parts.join(" · ") + ` · кусок видео ${fmt(A, 0)}–${fmt(B, 0)} (${fmt(win, 0)})` +
     (unk.size ? ` · <span style="color:var(--warn)">нет голоса для: ${[...unk].map(esc).join(", ")} — добавьте в шаге 3</span>` : "");
+  if (typeof stepSums === "function") stepSums();
 }
 $("edClear").onclick = () => { if (S.script[edCur].trim() && !confirm(`Очистить текст ${edCur.toUpperCase()}?`)) return; setScript(edCur, ""); };
 $("edImport").onclick = () => $("edFile").click();

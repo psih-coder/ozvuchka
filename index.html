@@ -120,10 +120,12 @@
 
   <!-- ============ 2. Сценарий ============ -->
   <section class="card" id="scriptCard">
-    <div class="tabhead">
-      <h2><span class="stepn">2</span> ✍ Сценарий</h2>
-      <span class="hint">Напишите текст сами или попросите ИИ — он появится здесь. Читайте, правьте, потом переходите к озвучке.</span>
-    </div>
+   <details class="accd" id="scriptAcc">
+    <summary class="acchead">
+      <h2><span class="stepn">2</span> ✍ Сценарий <span class="accsum" id="scriptSum"></span></h2>
+      <span class="chev">▾</span>
+    </summary>
+    <div class="hint" style="margin:10px 0 12px">Напишите текст сами или попросите ИИ — он появится здесь. Читайте, правьте, потом переходите к озвучке.</div>
     <div class="edbar">
       <div class="seg" id="edLang"><button data-v="ru" class="on">RU · русский</button><button data-v="en">EN · English</button></div>
       <button class="btn sm" id="aiOpen">✨ Написать с ИИ</button>
@@ -189,14 +191,17 @@
           <span class="mono">0:05 текст</span> или <span class="mono">0:05 - 0:09 текст</span> — фраза начинается с этого времени (при озвучке «по фразам»).</div>
       </details>
     </div>
+   </details>
   </section>
 
   <!-- ============ 3. Озвучка ============ -->
   <section class="card" id="voiceCard" data-vmode="solid">
-    <div class="tabhead">
-      <h2><span class="stepn">3</span> 🎙 Озвучка</h2>
-      <span class="hint">Берёт текст из сценария выше. Выберите, как озвучить, и голоса.</span>
-    </div>
+   <details class="accd" id="voiceAcc">
+    <summary class="acchead">
+      <h2><span class="stepn">3</span> 🎙 Озвучка <span class="accsum" id="voiceSum"></span></h2>
+      <span class="chev">▾</span>
+    </summary>
+    <div class="hint" style="margin:10px 0 12px">Берёт текст из сценария выше. Выберите, как озвучить, и голоса.</div>
     <div class="vmodes">
       <label class="mcard"><input type="radio" name="vmode" value="solid" checked><b>🎙 Целиком</b><small>весь текст одним дублем — без пауз и обрывов между фразами</small></label>
       <label class="mcard"><input type="radio" name="vmode" value="phrases"><b>📜 По фразам</b><small>фразы расставляются по видео; разные голоса по именам; таймкоды из сценария</small></label>
@@ -260,6 +265,7 @@
     </div>
     <progress id="vBar" value="0" max="100" hidden></progress>
     <ul class="log" id="vLog"></ul>
+   </details>
   </section>
 
   <!-- ============ 4. Субтитры ============ -->
