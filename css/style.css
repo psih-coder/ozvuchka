@@ -454,3 +454,7 @@
   #subSetBox > summary { flex-wrap: nowrap; }
   #subSetBox > summary .hint { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #subSetBox > summary .vbt { white-space: nowrap; }
+  /* лог «что сейчас делается» (ИИ, озвучка, Whisper, рендер) — крупнее и на своей плашке, цвета сообщений прежние */
+  .log:not(:empty) { margin-top: 14px; padding: 10px 14px; gap: 6px; font-size: 15px; line-height: 1.45;
+    background: rgba(0,0,0,.28); border: 1px solid var(--line2); border-radius: 12px; }
+  .log li.run { font-weight: 600; }
