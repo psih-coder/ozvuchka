@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Озвучка Ai Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
+<!-- шрифты субтитров (с кириллицей); без интернета будут системные -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Russo+One&family=Rubik:wght@800&family=Oswald:wght@700&family=Unbounded:wght@800&family=Comfortaa:wght@700&family=Exo+2:wght@900&family=PT+Serif:wght@700&family=Playfair+Display:wght@700&family=Manrope:wght@700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="top"><div class="in">
+  <div class="brand"><div class="logo">🎙</div><div><b>Озвучка Ai Pro</b><small>готовое видео → реплики RU / EN → голос точно в своё время</small></div></div>
+  <div class="keybox">
+    <input type="password" id="key" class="inp" placeholder="Ключ Polza AI (pza_...)" autocomplete="off" title="Нужен для ИИ-сценария и озвучки. Хранится только в этом браузере.">
+    <button class="btn ghost sm" id="keyCheck">Проверить</button>
+    <span id="keyStatus" class="hint"></span>
+  </div>
+  <button class="btn ghost sm" id="projOpen" title="Загрузить сохранённый проект (.json)">📂 Открыть</button>
+  <button class="btn ghost sm" id="projSave" title="Скачать проект: таймкоды и тексты (.json)">💾 Сохранить</button>
+  <input type="file" id="projInput" accept=".json,application/json" hidden>
+</div></header>
+
+<main class="wrap">
+  <!-- ============ 1. Видео ============ -->
+  <section class="card" id="videoCard">
+    <div class="tabhead" style="margin-bottom:12px"><h2><span class="stepn">1</span> 🎬 Видео</h2><span class="hint">Загрузите готовое видео — сверху будет плеер и таймлайн.</span></div>
+    <div id="drop" class="drop">
+      <div class="big">🎬</div>
+      <div>Перетащите сюда <b>готовое видео</b> или нажмите, чтобы выбрать</div>
+      <div class="hint" style="margin-top:6px">16:9 и 9:16 определяются сами. Видео никуда не отправляется — всё работает в браузере.</div>
+    </div>
+    <input type="file" id="vidInput" accept="video/*" hidden>
+
+    <div id="stage" class="stage" hidden>
+      <div class="screen" id="screen">
+        <video id="vid" playsinline preload="auto"></video>
+        <div class="grade" id="grade"><div class="g-temp"></div><div class="g-tint"></div><div class="g-vig"></div><div class="g-grain"></div>
+          <div class="g-bar top"></div><div class="g-bar bot"></div><div class="g-fade"></div></div>
+        <canvas class="subcan" id="subCan" title="Клик — пуск/пауза. Субтитры можно перетащить мышью"></canvas>
+        <div class="badge" id="arBadge">16:9</div>
+        <button class="bigplay" id="bigPlay" title="Пробел">▶</button>
+        <button class="fsbtn" id="fsBtn" title="На весь экран">⛶</button>
+      </div>
+      <aside class="side">
+        <div>
+          <div class="clock"><span class="tcbig" id="tcBig">0:00.0</span><span class="tcdur" id="tcDur">/ 0:00.0</span></div>
+          <div class="vmeta" id="vidMeta"></div>
+        </div>
+        <div class="nowcard cue" id="nowCard">
+          <div class="nowhead"><span class="pill off" id="nowNum">—</span><span class="mono hint" id="nowRange">реплики под курсором нет</span></div>
+          <div id="nowBody" hidden>
+            <div class="ctx">
+              <label class="lt ru">RU<span class="fit" data-fit="ru"></span></label>
+              <textarea id="nowRu" data-f="ru" rows="3" placeholder="Что говорит голос по-русски"></textarea>
+            </div>
+            <div class="ctx" style="margin-top:6px">
+              <label class="lt en">EN<span class="fit" data-fit="en"></span></label>
+              <textarea id="nowEn" data-f="en" rows="3" placeholder="The same in English"></textarea>
+            </div>
+            <div class="row" style="margin-top:8px">
+              <button class="btn ghost sm" data-a="setStart" title="Начало реплики = текущее время ( [ )">⏱ Начало</button>
+              <button class="btn ghost sm" data-a="setEnd" title="Конец реплики = текущее время ( ] )">⏱ Конец</button>
+              <button class="btn ghost sm" data-a="del" title="Удалить реплику">🗑</button>
+            </div>
+          </div>
+          <div id="nowEmpty"><button class="btn sm" id="addHere">＋ Реплика с 0:00.0</button></div>
+        </div>
+        <div class="nextline" id="nextLine"></div>
+        <div class="keys">
+          <kbd>Пробел</kbd> пуск/пауза · <kbd>←</kbd><kbd>→</kbd> ±1 с (<kbd>Shift</kbd> ±5 с) · <kbd>,</kbd><kbd>.</kbd> по кадру<br>
+          <kbd>I</kbd> реплика здесь · <kbd>[</kbd> <kbd>]</kbd> начало / конец выбранной · <kbd>Del</kbd> удалить · <kbd>Ctrl+Z</kbd> отменить<br>
+          В тексте: <kbd>Ctrl+Enter</kbd> пуск/пауза, <kbd>Esc</kbd> выйти из поля
+        </div>
+      </aside>
+    </div>
+
+    <div class="transport" id="transport" hidden>
+      <div class="grp">
+        <button class="tbtn" data-seek="-5" title="−5 с">−5</button>
+        <button class="tbtn" data-seek="-1" title="−1 с">−1</button>
+        <button class="tbtn" data-frame="-1" title="Кадр назад ( , )">‹</button>
+        <button class="tbtn play" id="playBtn" title="Пробел">▶</button>
+        <button class="tbtn" data-frame="1" title="Кадр вперёд ( . )">›</button>
+        <button class="tbtn" data-seek="1" title="+1 с">+1</button>
+        <button class="tbtn" data-seek="5" title="+5 с">+5</button>
+      </div>
+      <span class="sep"></span>
+      <select id="rateSel" title="Скорость просмотра">
+        <option value="0.5">0.5×</option><option value="0.75">0.75×</option><option value="1" selected>1×</option>
+        <option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="2">2×</option>
+      </select>
+      <span class="sep"></span>
+      <span class="hint vlabel">Слушать голос:</span>
+      <div class="seg" id="prevLang"><button data-v="ru" class="on">RU</button><button data-v="en">EN</button><button data-v="off">выкл</button></div>
+      <label class="vol" title="Громкость звука самого видео">Видео <input type="range" id="volOrig" min="0" max="100" value="60"></label>
+      <label class="vol" title="Громкость озвучки">Голос <input type="range" id="volVoice" min="0" max="150" value="100"></label>
+      <span class="sep"></span>
+      <label class="chk" title="Показывать субтитры на превью так, как они будут в готовом видео"><input type="checkbox" id="ovOn" checked> Субтитры</label>
+      <select id="arSel" title="Формат кадра">
+        <option value="auto">Формат: авто</option><option value="16:9">16:9</option><option value="9:16">9:16</option><option value="1:1">1:1</option>
+      </select>
+      <button class="btn ghost sm" id="changeVid" style="margin-left:auto">🔄 Другое видео</button>
+    </div>
+
+    <div class="tlwrap" id="tlWrap" hidden>
+      <canvas id="tl"></canvas>
+      <div class="tlbar">
+        <span>🔍 Масштаб</span><input type="range" id="zoom" min="0" max="1000" value="0">
+        <span class="legend"><i style="background:var(--ru)"></i>голос RU</span>
+        <span class="legend"><i style="background:var(--en)"></i>голос EN</span>
+        <span class="legend"><i style="background:var(--err)"></i>не помещается</span>
+        <span class="tip-desk" style="margin-left:auto">Клик — перемотка · двойной клик — новая реплика · тяните блок или его края · колесо + <kbd>Ctrl</kbd> — масштаб</span>
+        <span class="tip-touch">Нажмите — перемотка · двойное касание — новая фраза · тяните блок или его края · масштаб — ползунком</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 2. Сценарий ============ -->
+  <section class="card" id="scriptCard">
+    <div class="tabhead">
+      <h2><span class="stepn">2</span> ✍ Сценарий</h2>
+      <span class="hint">Напишите текст сами или попросите ИИ — он появится здесь. Читайте, правьте, потом переходите к озвучке.</span>
+    </div>
+    <div class="edbar">
+      <div class="seg" id="edLang"><button data-v="ru" class="on">RU · русский</button><button data-v="en">EN · English</button></div>
+      <button class="btn sm" id="aiOpen">✨ Написать с ИИ</button>
+      <button class="btn ghost sm" id="edTr" title="Перевести весь текст на второй язык (нейросетью)">🌐 Перевести на EN</button>
+      <button class="btn ghost sm" id="edImport" title="Загрузить текст или субтитры .srt">📂 Открыть файл</button>
+      <input type="file" id="edFile" accept=".txt,.srt,.vtt,text/plain" hidden>
+      <button class="btn ghost sm" id="edClear">🗑 Очистить</button>
+      <span class="edrange">Кусок видео: с <input class="inp tin" id="scFrom" placeholder="0:00"> по <input class="inp tin" id="scTo" placeholder="конец">
+        <button class="ib" id="scFromNow" title="С текущего времени видео">⏱с</button><button class="ib" id="scToNow" title="По текущее время видео">⏱по</button></span>
+    </div>
+
+    <div class="aipanel" id="aiPanel" hidden>
+      <div class="grid">
+        <div style="grid-column: span 2; min-width:0">
+          <label class="f">Нейросеть</label>
+          <select id="aiModel"></select>
+          <input type="text" id="aiCustom" class="inp" placeholder="ID модели Polza, например vendor/model-name" style="margin-top:6px" hidden>
+          <div class="hint" id="aiModelInfo" style="margin-top:4px"></div>
+        </div>
+        <div><label class="f">На каких языках писать</label>
+          <select id="aiLangs"><option value="both">Русский + English</option><option value="ru">Только русский</option><option value="en">Только English</option></select></div>
+        <div><label class="f">Подача</label>
+          <select id="aiTone">
+            <option value="voiceover">Закадровый голос, как в обзоре</option><option value="hype">Хайп, эмоции, «вы не поверите»</option>
+            <option value="facts">Интересные факты и детали</option><option value="fun">С юмором</option>
+            <option value="trailer">Голос трейлера — пафосно и коротко</option><option value="docu">Документальный рассказчик</option>
+            <option value="story">От лица персонажа</option><option value="stream">Как стример / летсплейщик</option><option value="free">Только по моему промпту</option>
+          </select></div>
+      </div>
+      <div style="margin-top:12px">
+        <label class="f">О чём ролик — что должен рассказать голос</label>
+        <textarea id="aiCtx" rows="3" placeholder="Например: обзор второго трейлера GTA 6. Рассказываем, что показали про Лусию и Джейсона, какие места Вайс-Сити узнали. Тон дерзкий, без воды, в конце — призыв подписаться."></textarea>
+      </div>
+      <div class="grid" style="margin-top:12px">
+        <div style="grid-column: span 2"><label class="f">Пожелания (необязательно)</label>
+          <input type="text" id="aiWish" class="inp" placeholder="без мата; обращайся к зрителю на «ты»; упомяни дату выхода"></div>
+        <div><label class="f">Сколько говорит голос: <b id="afDensV" style="color:var(--text)">70%</b> времени</label><input type="range" id="afDens" min="20" max="100" step="5" value="70"></div>
+        <div><label class="f">Кадров для ИИ: <b id="afNV" style="color:var(--text)">24</b></label><input type="range" id="afN" min="6" max="60" step="2" value="24" title="Больше кадров — точнее, но дороже"></div>
+      </div>
+      <div class="checks2">
+        <label class="chk" id="aiFramesWrap" title="Программа вырежет кадры из видео и покажет их нейросети"><input type="checkbox" id="aiFrames" checked> ИИ смотрит кадры видео</label>
+        <label class="chk" title="Каждая фраза получит время начала — для озвучки «по фразам»"><input type="checkbox" id="aiTimed"> Расставить таймкоды по кадрам</label>
+        <label class="chk" id="afSpkWrap" title="Если голосов несколько — ИИ подпишет, кто говорит"><input type="checkbox" id="afSpk" checked> Подписать, кто говорит (<span id="afSpkN"></span>)</label>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn" id="aiGo">✨ Написать сценарий</button>
+        <button class="btn ghost stop" id="aiStop" hidden>⏹ Стоп</button>
+        <button class="btn ghost sm" id="aiClose">Свернуть</button>
+        <span class="hint" id="aiCost"></span>
+      </div>
+      <ul class="log" id="aiLog"></ul>
+    </div>
+
+    <textarea id="edText" class="editor" spellcheck="true" placeholder="Это Вайс-Сити. Солнце, пальмы и деньги, которые сами просятся в руки.
+Но за красивой картинкой прячется город, где каждый сам за себя.
+
+Лусия: Я не вернусь в тюрьму. Никогда.
+Джейсон: Тогда нам нужен план получше."></textarea>
+    <div class="edinfo"><span id="edInfo"></span>
+      <details class="edhelp"><summary>Как писать</summary>
+        <div>Обычный текст — читает основной голос. Пустая строка — пауза подлиннее.<br>
+          <span class="mono">Лусия: текст</span> — эту фразу говорит голос «Лусия» (при озвучке «по фразам»).<br>
+          <span class="mono">0:05 текст</span> или <span class="mono">0:05 - 0:09 текст</span> — фраза начинается с этого времени (при озвучке «по фразам»).</div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ============ 3. Озвучка ============ -->
+  <section class="card" id="voiceCard" data-vmode="solid">
+    <div class="tabhead">
+      <h2><span class="stepn">3</span> 🎙 Озвучка</h2>
+      <span class="hint">Берёт текст из сценария выше. Выберите, как озвучить, и голоса.</span>
+    </div>
+    <div class="vmodes">
+      <label class="mcard"><input type="radio" name="vmode" value="solid" checked><b>🎙 Целиком</b><small>весь текст одним дублем — без пауз и обрывов между фразами</small></label>
+      <label class="mcard"><input type="radio" name="vmode" value="phrases"><b>📜 По фразам</b><small>фразы расставляются по видео; разные голоса по именам; таймкоды из сценария</small></label>
+    </div>
+    <div class="grid only-phrases" style="margin-top:12px">
+      <div><label class="f">Как резать на фразы</label><select id="fsSplit"><option value="sent">По предложениям</option><option value="line">Строка = фраза</option><option value="short">Короткими кусками (до ~4 с)</option></select></div>
+      <div><label class="f">Фразы без таймкода</label><select id="fsPlace"><option value="spread">Равномерно по куску видео</option><option value="seq">Подряд, с паузами</option></select></div>
+      <div><label class="f">Пауза между фразами: <b id="fsGapV" style="color:var(--text)">0,4 с</b></label><input type="range" id="fsGap" min="0" max="2" step="0.1" value="0.4"></div>
+    </div>
+    <details class="vblock" id="voicesBox">
+      <summary><span class="vbt">🗣 Голоса и эффекты</span> <span class="hint" id="voicesSum"></span><span class="chev">▾</span></summary>
+      <div class="vgrid" id="vCards" style="margin-top:12px"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn ghost" id="addVoice">＋ Добавить голос</button>
+        <button class="btn ghost" id="libOpen" title="Сохранённые настройки голосов">📚 Мои голоса <span class="hint" id="libCount"></span></button>
+      </div>
+      <div class="grid" style="margin-top:14px">
+        <div><label class="f">Скорость голоса: <b id="vSpeedVal" style="color:var(--text)">1.00×</b></label><input type="range" id="vSpeed" min="0.8" max="1.3" step="0.05" value="1"></div>
+        <div><label class="f">Если не помещается — ускорять до <b id="vMaxVal" style="color:var(--text)">1.30×</b></label><input type="range" id="vMax" min="1" max="1.6" step="0.05" value="1.3"></div>
+        <div style="display:grid; gap:8px; align-content:center">
+          <label class="chk"><input type="checkbox" id="vFit" checked> Подгонять под длину</label>
+          <label class="chk"><input type="checkbox" id="vTrim" checked> Убирать тишину по краям</label>
+        </div>
+      </div>
+    </details>
+
+    <div class="vgrid" style="margin-top:14px">
+      <div class="vcol track" data-lang="ru"><h3><span class="tag-ru">●</span> Русская дорожка</h3><div class="vsum" id="vsum_ru"></div>
+        <div class="exp"><button class="btn ghost sm" data-exp="wav" data-lang="ru" title="Дорожка длиной с видео — ставится в монтажке на 0:00">⬇ WAV</button><button class="btn ghost sm" data-exp="srt" data-lang="ru">⬇ .srt</button></div></div>
+      <div class="vcol track" data-lang="en"><h3><span class="tag-en">●</span> Английская дорожка</h3><div class="vsum" id="vsum_en"></div>
+        <div class="exp"><button class="btn ghost sm" data-exp="wav" data-lang="en" title="Дорожка длиной с видео — ставится в монтажке на 0:00">⬇ WAV</button><button class="btn ghost sm" data-exp="srt" data-lang="en">⬇ .srt</button></div></div>
+    </div>
+
+    <details class="vblock" id="fineBox" style="margin-top:16px">
+      <summary>⚙ Тонкая настройка по таймкодам <span class="hint" id="cueCount"></span></summary>
+      <div class="hint" style="margin:10px 0 0">Здесь — фразы после озвучки: можно подвинуть время (или на таймлайне сверху), поправить текст, сменить голос и озвучить только изменённое кнопкой «🎙 Озвучить».
+        Если снова нажать «🎙 Озвучить» после правок в сценарии — фразы соберутся из сценария заново.</div>
+      <div class="toolbar">
+        <button class="btn sm" id="addCue">＋ Фраза на <span class="mono" id="addAt">0:00.0</span></button>
+        <button class="btn ghost sm" id="splitBtn" title="Разметить всё видео на равные отрезки">⊞ Нарезать по</button>
+        <select id="segLen"><option value="3">3 с</option><option value="4">4 с</option><option value="5" selected>5 с</option><option value="7">7 с</option><option value="10">10 с</option><option value="15">15 с</option></select>
+        <button class="btn ghost sm" id="undoBtn" title="Ctrl+Z">↶ Отменить</button>
+        <button class="btn ghost sm" id="toScript" title="Записать фразы с таймкодами обратно в сценарий">⇡ В сценарий</button>
+        <button class="btn ghost sm" id="clearBtn">🗑 Удалить все фразы</button>
+      </div>
+      <div class="list" id="listManual" data-empty="Фраз пока нет — они появятся после «🎙 Озвучить»."></div>
+    </details>
+    <div class="row" style="margin-top:18px">
+      <span class="hint">Озвучить:</span>
+      <label class="chk"><input type="checkbox" id="voRu" checked> <span class="tag-ru">RU</span></label>
+      <label class="chk"><input type="checkbox" id="voEn" checked> <span class="tag-en">EN</span></label>
+      <span class="hint only-solid" style="margin-left:14px">Голос:</span>
+      <label class="chk only-solid"><span class="tag-ru">RU</span> <select id="solV_ru" class="solvsel" data-l="ru" style="width:auto"></select></label>
+      <label class="chk only-solid"><span class="tag-en">EN</span> <select id="solV_en" class="solvsel" data-l="en" style="width:auto"></select></label>
+    </div>
+
+    <div class="row" style="margin-top:16px">
+      <button class="btn bigbtn" id="voGo">🎙 Озвучить</button>
+      <button class="btn ghost stop" id="vStop" hidden>⏹ Стоп</button>
+      <span class="hint" id="voHint">Повторно — бесплатно: неизменённые фразы берутся из памяти.</span>
+    </div>
+    <progress id="vBar" value="0" max="100" hidden></progress>
+    <ul class="log" id="vLog"></ul>
+  </section>
+
+  <!-- ============ 4. Субтитры ============ -->
+  <section class="card" id="subsCard">
+   <details class="accd" id="subsAcc">
+    <summary class="acchead">
+      <h2><span class="stepn">4</span> 🔤 Субтитры <span class="accsum" id="subsSum"></span></h2>
+      <span class="chev">▾</span>
+    </summary>
+    <div class="pvlayout">
+      <div class="pvbox">
+        <canvas class="pv" id="subPv"></canvas>
+        <div class="pvbar"><button class="tbtn play" data-pvplay title="Пуск / пауза">▶</button><span class="mono hint" data-pvtime>0:00.0</span></div>
+        <div class="hint pvhint">Так будет в видео. Надпись можно перетащить.</div>
+      </div>
+      <div class="pvset">
+    <div class="presets" id="subPresets"></div>
+    <div class="grid" style="margin-top:14px">
+      <div><label class="f">Шрифт</label>
+        <select id="subFont">
+          <option value="montserrat">Montserrat — жирный</option><option value="russo">Russo One</option><option value="rubik">Rubik</option>
+          <option value="oswald">Oswald — узкий</option><option value="unbounded">Unbounded — широкий</option><option value="comfortaa">Comfortaa — округлый</option>
+          <option value="exo">Exo 2 — игровой</option>
+          <option value="manrope">Manrope — спокойный, классика</option><option value="ptserif">PT Serif — с засечками</option><option value="playfair">Playfair — кино, с засечками</option>
+        </select></div>
+      <div><label class="f">Слов на экране</label>
+        <select id="subWords">
+          <option value="1">По одному</option><option value="2" selected>По 1–2</option><option value="3">По 2–3</option>
+          <option value="5">По 4–5</option><option value="8">Фраза целиком (как на YouTube)</option>
+        </select></div>
+      <div><label class="f">Строк</label>
+        <select id="subLines"><option value="1">Одна строка</option><option value="2">До двух строк</option></select></div>
+      <div><label class="f">Анимация слова</label>
+        <select id="subAnim">
+          <option value="pop">Выпрыгивает</option><option value="bounce">Подпрыгивает</option><option value="fade">Плавно появляется</option>
+          <option value="rise">Выезжает снизу</option><option value="none">Без анимации</option>
+        </select></div>
+      <div><label class="f">Подчёркивание слова</label>
+        <select id="subUnder">
+          <option value="none">Нет</option><option value="line">Текущее слово</option><option value="grow">Линия растёт по ходу слова</option>
+          <option value="trail">Все сказанные слова</option>
+        </select></div>
+      <div><label class="f">Подложка</label>
+        <select id="subPlate">
+          <option value="none">Нет</option><option value="text">Под всем текстом</option><option value="word">Под текущим словом</option>
+          <option value="both">Под текстом + слово на цветном фоне</option>
+        </select></div>
+      <div><label class="f">Размер: <b id="subSizeVal" style="color:var(--text)">8%</b></label>
+        <input type="range" id="subSize" min="3" max="16" step="0.5" value="8"></div>
+      <div><label class="f">Обводка: <b id="subSwVal" style="color:var(--text)">18%</b></label>
+        <input type="range" id="subSw" min="0" max="30" step="1" value="18"></div>
+      <div><label class="f">Прозрачность подложки: <b id="subPlateOpVal" style="color:var(--text)">60%</b></label>
+        <input type="range" id="subPlateOp" min="10" max="100" step="5" value="60"></div>
+      <div><label class="f">По высоте: <b id="subYVal" style="color:var(--text)">70%</b> <span class="hint">(для каждого формата — своя)</span></label>
+        <input type="range" id="subY" min="8" max="94" step="1" value="70"></div>
+      <div><label class="f">По ширине: <b id="subXVal" style="color:var(--text)">центр</b></label>
+        <input type="range" id="subX" min="-30" max="30" step="1" value="0"></div>
+      <div><label class="f">Сдвиг по времени: <b id="subShiftVal" style="color:var(--text)">0,00 с</b></label>
+        <input type="range" id="subShift" min="-0.5" max="0.5" step="0.05" value="0"></div>
+    </div>
+    <div class="colors">
+      <label>Текст <input type="color" id="subFill" value="#ffffff"></label>
+      <label>Текущее слово <input type="color" id="subHi" value="#ffd400"></label>
+      <label>Обводка <input type="color" id="subStroke" value="#000000"></label>
+      <label>Подложка <input type="color" id="subPlateColor" value="#000000"></label>
+      <label><input type="checkbox" id="subGlow"> Свечение <input type="color" id="subGlowColor" value="#00e5ff"></label>
+      <label>Линия <input type="color" id="subUlColor" value="#ffd400"></label>
+      <label><input type="checkbox" id="subShadow" checked> Тень</label>
+      <label><input type="checkbox" id="subUpper" checked> ЗАГЛАВНЫЕ</label>
+      <label title="Только на превью: где у YouTube Shorts кнопки и подпись"><input type="checkbox" id="subSafe"> Зоны YouTube Shorts</label>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn ghost" id="alignBtn" title="Нейросеть Whisper слушает готовый голос и ставит каждое слово точно. Работает в браузере, ~250 МБ скачивается один раз">🎯 Точное время слов (Whisper)</button>
+      <button class="btn ghost sm" data-subsrt="ru">⬇ .srt RU как на экране</button>
+      <button class="btn ghost sm" data-subsrt="en">⬇ .srt EN как на экране</button>
+      <span class="hint" id="subInfo"></span>
+    </div>
+    <ul class="log" id="sLog"></ul>
+      </div>
+    </div>
+   </details>
+  </section>
+
+  <!-- ============ 5. Цвет и стиль видео ============ -->
+  <section class="card" id="gradeCard">
+   <details class="accd" id="gradeAcc">
+    <summary class="acchead">
+      <h2><span class="stepn">5</span> 🎨 Стиль видео <span class="accsum" id="gradeSum"></span></h2>
+      <span class="chev">▾</span>
+    </summary>
+    <div class="pvlayout">
+      <div class="pvbox">
+        <canvas class="pv" id="gradePv"></canvas>
+        <div class="pvbar"><button class="tbtn play" data-pvplay title="Пуск / пауза">▶</button><span class="mono hint" data-pvtime>0:00.0</span>
+          <button class="btn ghost sm" id="gCompare" title="Удерживайте — покажет оригинал">◐ До / после</button></div>
+      </div>
+      <div class="pvset">
+    <div class="fxchips" id="gChips"></div>
+    <div class="grid" style="margin-top:12px">
+      <div><label class="f">Яркость: <b id="gBV">100%</b></label><input type="range" id="gB" min="50" max="150" step="1" value="100"></div>
+      <div><label class="f">Контраст: <b id="gCV">100%</b></label><input type="range" id="gC" min="50" max="160" step="1" value="100"></div>
+      <div><label class="f">Насыщенность: <b id="gSV">100%</b></label><input type="range" id="gS" min="0" max="200" step="1" value="100"></div>
+      <div><label class="f">Температура: <b id="gTV">0</b></label><input type="range" id="gT" min="-50" max="50" step="1" value="0" title="Влево — холоднее, вправо — теплее"></div>
+      <div><label class="f">Оттенок <input type="color" id="gTint" value="#ff3d8b" style="vertical-align:middle;margin-left:6px">: <b id="gTAV">0%</b></label><input type="range" id="gTA" min="0" max="60" step="1" value="0"></div>
+      <div><label class="f">Выцветание (сепия): <b id="gSepV">0%</b></label><input type="range" id="gSep" min="0" max="80" step="1" value="0"></div>
+      <div><label class="f">Резкость: <b id="gShV">0%</b></label><input type="range" id="gSh" min="0" max="100" step="5" value="0" title="Помогает старым и растянутым видео"></div>
+      <div><label class="f">Виньетка: <b id="gVigV">0%</b></label><input type="range" id="gVig" min="0" max="100" step="1" value="0"></div>
+      <div><label class="f">Плёночное зерно: <b id="gGrV">0%</b></label><input type="range" id="gGr" min="0" max="100" step="1" value="0"></div>
+      <div><label class="f">Кинополосы</label><select id="gBars"><option value="none">Нет</option><option value="2.39">Широкий экран 2.39:1</option><option value="2">2:1</option><option value="1.85">1.85:1</option></select></div>
+      <label class="chk" style="align-self:end"><input type="checkbox" id="gFade"> Плавно из чёрного и в чёрное</label>
+      <div style="align-self:end"><button class="btn ghost sm" id="gReset">Сбросить</button></div>
+    </div>
+      </div>
+    </div>
+   </details>
+  </section>
+
+  <!-- ============ 6. Рендер ============ -->
+  <section class="card">
+    <div class="tabhead">
+      <h2><span class="stepn">6</span> 🎬 Рендер — готовое видео</h2>
+      <span class="hint">Ваше видео + озвучка + субтитры в один mp4. Формат кадра — как выбран над таймлайном.</span>
+    </div>
+    <div class="grid" style="margin-top:14px">
+      <div><label class="f">Голос</label>
+        <select id="rVoice"><option value="ru">Русский</option><option value="en">English</option><option value="both">Обе версии — два файла</option></select></div>
+      <div><label class="f">Субтитры</label>
+        <select id="rSubs"><option value="same">На языке голоса</option><option value="ru">Всегда русские</option><option value="en">Всегда английские</option><option value="none">Без субтитров</option></select></div>
+      <div><label class="f">Размер</label>
+        <select id="rRes"><option value="src" selected>Как у исходника — без потерь</option><option value="2160">4K</option><option value="1440">1440p</option><option value="1080">1080p</option><option value="720">720p</option></select></div>
+      <div><label class="f">Качество</label>
+        <select id="rQ"><option value="0.1">Обычное — файл меньше</option><option value="0.18" selected>Высокое</option><option value="0.3">Максимум — для YouTube</option></select></div>
+      <div><label class="f">Звук оригинала под голосом: <b id="mixOrigVal" style="color:var(--text)">25%</b></label>
+        <input type="range" id="mixOrig" min="0" max="100" step="1" value="25"></div>
+    </div>
+    <div class="hint" id="rInfo" style="margin-top:10px"></div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn" id="renderBtn">🎬 Рендер</button>
+      <button class="btn ghost stop" id="rStop" hidden>⏹ Стоп</button>
+      <span class="hint">Без субтитров и в исходном формате видео копируется без перекодирования — это секунды.</span>
+    </div>
+    <progress id="rBar" value="0" max="100" hidden></progress>
+    <ul class="log" id="rLog"></ul>
+    <div id="rOut"></div>
+  </section>
+</main>
+<div class="modal" id="vModal" hidden>
+  <div class="mbox">
+    <h3 style="font-size:18px;margin:0 0 6px">＋ Новый голос</h3>
+    <label class="f" style="margin-top:10px">Имя голоса (необязательно)</label>
+    <input type="text" id="vmName" class="inp" placeholder="например: Лусия, Джейсон, Диктор">
+    <div class="hint" style="margin:14px 0 10px">На каком языке он будет говорить?</div>
+    <div class="mlangs">
+      <button class="mlang" data-ml="ru"><b>Русский</b><small>для русской дорожки</small></button>
+      <button class="mlang" data-ml="en"><b>English</b><small>для английской дорожки</small></button>
+    </div>
+    <div id="vmLibWrap" hidden>
+      <div class="hint" style="margin:16px 0 8px">…или сразу из сохранённых:</div>
+      <div class="libgrid" id="vmLib"></div>
+    </div>
+    <div class="row" style="margin-top:14px;justify-content:flex-end"><button class="btn ghost sm" id="vmCancel">Отмена</button></div>
+  </div>
+</div>
+<div class="modal" id="libModal" hidden>
+  <div class="mbox" style="width:min(620px,100%)">
+    <h3 style="font-size:18px;margin:0 0 6px">📚 Мои голоса</h3>
+    <div class="hint" style="margin-bottom:12px">Сохранённые настройки: модель, голос, манера, акцент, характер и эффекты. Хранятся в этом браузере — и после закрытия страницы тоже.
+      Чтобы перенести на другой компьютер — «Скачать файлом».</div>
+    <div class="liblist" id="libList"></div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn ghost sm" id="libExport">⬇ Скачать файлом</button>
+      <button class="btn ghost sm" id="libImport">⬆ Загрузить из файла</button>
+      <input type="file" id="libFile" accept=".json,application/json" hidden>
+      <button class="btn ghost sm" id="libClose" style="margin-left:auto">Закрыть</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="voSharp" color-interpolation-filters="sRGB"><feConvolveMatrix id="voSharpM" order="3" preserveAlpha="true" kernelMatrix="0 0 0 0 1 0 0 0 0"/></filter></svg>
+
+<script src="js/core.js"></script>
+<script src="js/models.js"></script>
+<script src="js/state.js"></script>
+<script src="js/video.js"></script>
+<script src="js/cues.js"></script>
+<script src="js/timeline.js"></script>
+<script src="js/polza.js"></script>
+<script src="js/script.js"></script>
+<script src="js/phrases.js"></script>
+<script src="js/tts.js"></script>
+<script src="js/effects.js"></script>
+<script src="js/voices.js"></script>
+<script src="js/playback.js"></script>
+<script src="js/export.js"></script>
+<script src="js/subs.js"></script>
+<script src="js/whisper.js"></script>
+<script src="js/style.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/render.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

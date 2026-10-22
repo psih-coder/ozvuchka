@@ -3,3 +3,5 @@ node_modules/
 *.bak.html
 Thumbs.db
 .DS_Store
+.claude/
+dist/
