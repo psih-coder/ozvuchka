@@ -12,5 +12,8 @@ xcopy css dist\css\ /e /i /q /y >nul
 xcopy js dist\js\ /e /i /q /y >nul
 xcopy fonts dist\fonts\ /e /i /q /y >nul
 
+rem GitHub Pages: just push the committed code
+git push github main
+
 call npx wrangler pages deploy dist --project-name ozvuchka-ai-pro --branch main --commit-dirty=true
 pause
