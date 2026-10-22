@@ -303,7 +303,7 @@
 
   /* аккордеоны и превью в блоках */
   .accd > summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 10px; user-select: none; }
-  .accd > summary::-webkit-details-marker, #voicesBox > summary::-webkit-details-marker { display: none; }
+  .accd > summary::-webkit-details-marker, #voicesBox > summary::-webkit-details-marker, #fineBox > summary::-webkit-details-marker { display: none; }
   .accd > summary h2 { flex-wrap: wrap; }
   .accsum { font: 500 13px Manrope, sans-serif; color: var(--muted); letter-spacing: 0; }
   .chev { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 10px; background: var(--card2); border: 1px solid var(--line); color: var(--muted); transition: transform .2s; flex-shrink: 0; }
@@ -327,15 +327,15 @@
   .screen.fsfake .subcan, .screen.fsfake .grade { inset: auto; }
   body.fsbody { overflow: hidden; }
   #voicesBox { border: 1px solid rgba(255,159,67,.55); background: linear-gradient(135deg, rgba(255,159,67,.13), rgba(255,210,63,.05)); box-shadow: 0 0 0 3px rgba(255,159,67,.07); }   /* оранжевый — не сливается с розовой «Целиком» */
-  #voicesBox > summary { list-style: none; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 4px 0; }
-  #voicesBox > summary .vbt { font-size: 16.5px; font-weight: 800; }
-  #voicesBox > summary .chev { margin-left: auto; }
+  #voicesBox > summary, #fineBox > summary { list-style: none; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 4px 0; }
+  #voicesBox > summary .vbt, #fineBox > summary .vbt { font-size: 16.5px; font-weight: 800; }
+  #voicesBox > summary .chev, #fineBox > summary .chev { margin-left: auto; }
   @media (max-width: 700px) {
     .pvlayout { grid-template-columns: minmax(0, 1fr); gap: 12px; }
     .pvbox { padding: 4px 0; }
     .pvhint { display: none; }
-    #voicesBox > summary .vbt { font-size: 17px; }
-    #voicesBox { padding: 12px; }
+    #voicesBox > summary .vbt, #fineBox > summary .vbt { font-size: 17px; }
+    #voicesBox, #fineBox { padding: 12px; }
   }
   /* ---------- телефон ---------- */
   .tip-touch { display: none; }
@@ -432,8 +432,8 @@
   /* «Точное время слов» — свой цвет, чтобы не сливалась с «Субтитрами по голосу из видео» */
   #alignBtn { background: linear-gradient(135deg, #3ee6ff, #5b9dff); color: #06121c; box-shadow: 0 6px 20px rgba(62,230,255,.22); }
   /* «Тонкая настройка» — спокойный серо-синий, не спорит с «Голосами и эффектами» */
-  #fineBox { border-color: rgba(120,150,210,.28); background: rgba(120,150,210,.05); }
-  #fineBox > summary { color: #c9d4ea; }
+  #fineBox { border-color: rgba(110,150,255,.5); background: linear-gradient(135deg, rgba(110,150,255,.12), rgba(155,140,255,.05)); box-shadow: 0 0 0 3px rgba(110,150,255,.06); }
+  #fineBox > summary .vbt { color: #d6e1ff; }
   /* дорожки RU / EN — внизу шага, компактно */
   .tracks .vcol { padding: 9px 12px; gap: 6px; border-radius: 14px; }
   .tracks h3 { font-size: 13.5px; margin: 0; }
