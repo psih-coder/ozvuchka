@@ -13,7 +13,14 @@ function stepSums() {
   const vo = LANGS.map((l) => { const w = S.cues.filter((c) => c[l].trim()); return w.length ? `${l.toUpperCase()} ${w.filter((c) => voiceFresh(c, l)).length} из ${w.length}` : ""; }).filter(Boolean);
   $("voiceSum").textContent = "· " + (vo.length ? "озвучено " + vo.join(", ") : "ещё не озвучено");
 }
-for (const id of ["scriptAcc", "voiceAcc", "subsAcc", "gradeAcc", "voicesBox"]) {
+// шаг 6: что получится
+function renderSum() {
+  const res = $("rRes").value === "src" ? "как у исходника" : $("rRes").selectedOptions[0].text;
+  $("renderSum").textContent = `· ${$("rVoice").selectedOptions[0].text.replace(" — два файла", "")}, ${res}`;
+}
+["rVoice", "rRes"].forEach((id) => $(id).addEventListener("change", renderSum));
+renderSum();
+for (const id of ["scriptAcc", "voiceAcc", "subsAcc", "gradeAcc", "renderAcc", "voicesBox"]) {
   $(id).open = !!LS.get("vo-acc", {})[id];
   $(id).addEventListener("toggle", () => { const o = LS.get("vo-acc", {}); o[id] = $(id).open; LS.set("vo-acc", o); if ($(id).open) requestAnimationFrame(paintPreviews); });
 }

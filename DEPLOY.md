@@ -72,6 +72,7 @@ npx wrangler pages project create ozvuchka-ai-pro --production-branch main --for
 |---|---|
 | `index.html` | разметка страницы |
 | `css/style.css` | оформление |
+| `css/fonts.css`, `fonts/` | шрифты интерфейса и субтитров (свои файлы, без Google Fonts) |
 | `js/core.js` | общие помощники (время, тосты, скачивание, localStorage) |
 | `js/models.js` | списки моделей Polza, голоса, цены |
 | `js/state.js` | состояние проекта, автосохранение, переключатели |

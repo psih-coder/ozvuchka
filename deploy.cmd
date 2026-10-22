@@ -10,6 +10,7 @@ copy /y index.html dist\ >nul
 copy /y _headers dist\ >nul
 xcopy css dist\css\ /e /i /q /y >nul
 xcopy js dist\js\ /e /i /q /y >nul
+xcopy fonts dist\fonts\ /e /i /q /y >nul
 
 call npx wrangler pages deploy dist --project-name ozvuchka-ai-pro --branch main --commit-dirty=true
 pause

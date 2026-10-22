@@ -4,10 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Озвучка Ai Pro</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
-<!-- шрифты субтитров (с кириллицей); без интернета будут системные -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Russo+One&family=Rubik:wght@800&family=Oswald:wght@700&family=Unbounded:wght@800&family=Comfortaa:wght@700&family=Exo+2:wght@900&family=PT+Serif:wght@700&family=Playfair+Display:wght@700&family=Manrope:wght@700&display=swap">
+<!-- шрифты (с кириллицей) лежат на сайте — без внешних запросов -->
+<link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -115,6 +113,9 @@
         <span class="tip-desk" style="margin-left:auto">Клик — перемотка · двойной клик — новая реплика · тяните блок или его края · колесо + <kbd>Ctrl</kbd> — масштаб</span>
         <span class="tip-touch">Нажмите — перемотка · двойное касание — новая фраза · тяните блок или его края · масштаб — ползунком</span>
       </div>
+    </div>
+    <div class="row" id="projRow" style="margin-top:12px; justify-content:flex-end">
+      <button class="btn ghost sm" id="clearProj" title="Удалить видео, сценарий, фразы, озвучку и субтитры этого проекта">🗑 Очистить проект</button>
     </div>
   </section>
 
@@ -388,11 +389,13 @@
   </section>
 
   <!-- ============ 6. Рендер ============ -->
-  <section class="card">
-    <div class="tabhead">
-      <h2><span class="stepn">6</span> 🎬 Рендер — готовое видео</h2>
-      <span class="hint">Ваше видео + озвучка + субтитры в один mp4. Формат кадра — как выбран над таймлайном.</span>
-    </div>
+  <section class="card" id="renderCard">
+   <details class="accd" id="renderAcc">
+    <summary class="acchead">
+      <h2><span class="stepn">6</span> 🎬 Рендер — готовое видео <span class="accsum" id="renderSum"></span></h2>
+      <span class="chev">▾</span>
+    </summary>
+    <div class="hint" style="margin-top:10px">Ваше видео + озвучка + субтитры в один mp4. Формат кадра — как выбран над таймлайном.</div>
     <div class="grid" style="margin-top:14px">
       <div><label class="f">Голос</label>
         <select id="rVoice"><option value="ru">Русский</option><option value="en">English</option><option value="both">Обе версии — два файла</option></select></div>
@@ -414,6 +417,7 @@
     <progress id="rBar" value="0" max="100" hidden></progress>
     <ul class="log" id="rLog"></ul>
     <div id="rOut"></div>
+   </details>
   </section>
 </main>
 <div class="modal" id="vModal" hidden>

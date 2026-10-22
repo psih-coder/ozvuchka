@@ -344,7 +344,7 @@
     #videoCard .screen { order: 2; align-self: center; max-width: 100%; }
     .stage[data-ar="9:16"] .screen, .stage[data-ar="1:1"] .screen { height: 56vh; width: auto; }
     .stage[data-ar="16:9"] .screen { width: 100%; height: auto; }
-    #tlWrap { order: 3; margin-top: 10px; } #transport { order: 4; } #videoCard .side { order: 5; margin-top: 12px; }
+    #tlWrap { order: 3; margin-top: 10px; } #transport { order: 4; } #videoCard .side { order: 5; margin-top: 12px; } #projRow { order: 6; }
     .transport .vlabel { display: none; }
     .clock { justify-content: center; } .tcbig { font-size: 26px; }
     .transport { gap: 6px; padding: 8px; }

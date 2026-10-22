@@ -6,6 +6,16 @@ $("projSave").onclick = () => {
 };
 $("projOpen").onclick = () => $("projInput").click();
 $("projInput").onchange = async (e) => { const f = e.target.files[0]; e.target.value = ""; if (!f) return; try { loadProj(JSON.parse(await f.text())); } catch (er) { toast(er.message || "Не удалось открыть проект"); } };
+// очистить проект: видео, сценарий, фразы, озвучка (и её кэш), субтитры; голоса, ключ и настройки стиля остаются
+$("clearProj").onclick = async () => {
+  if (!confirm("Очистить проект?\n\nУдалятся видео, сценарий RU и EN, «о чём видео», фразы, вся озвучка (и её копия в памяти браузера — повторная озвучка будет платной) и субтитры.\n\nГолоса, «Мои голоса», ключ Polza и настройки стиля останутся.")) return;
+  clearTimeout(saveT); S.vStop = S.aiStop = S.sStop = true;
+  try { localStorage.removeItem("vo-project"); } catch {}
+  const o = LS.get("vo-settings", {}); for (const k of ["scFrom", "scTo", "aiCtx"]) delete o[k]; LS.set("vo-settings", o);
+  try { const db = await idb(); await new Promise((res) => { const t = db.transaction("clips", "readwrite"); t.objectStore("clips").clear(); t.oncomplete = t.onerror = t.onabort = res; }); } catch {}
+  mem.clear();
+  location.reload();
+};
 
 // ================= Старт =================
 initVoices(); restoreSet(); vLabels(); applyAR(); aiCostHint(); subPosLoad(); afLabels(); edShow(edCur);
