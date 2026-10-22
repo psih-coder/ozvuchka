@@ -51,7 +51,7 @@ function loadProj(p, quiet) {
   if (p.video?.name && S.file && p.video.name !== S.file.name) toast(`Проект был для «${p.video.name}» — загружено другое видео`);
 }
 const SET_IDS = ["aiModel", "aiCustom", "aiLangs", "aiTone", "aiCtx", "aiWish", "aiFrames", "aiTimed", "segLen", "scFrom", "scTo", "solV_ru", "solV_en", "fsSplit", "fsPlace", "fsGap", "afDens", "afN", "afSpk", "voRu", "voEn",
-  "vSpeed", "vMax", "vFit", "vTrim", "mixOrig", "volOrig", "volVoice", "ovOn", "arSel", "rateSel"];
+  "vSpeed", "vMax", "vFit", "vTrim", "mixOrig", "volOrig", "volVoice", "ovOn", "arSel", "rateSel", "asrWhere"];
 function saveSet() {
   const o = {}; SET_IDS.forEach((id) => { const el = $(id); o[id] = el.type === "checkbox" ? el.checked : el.value; });
   o.prevLang = prevLang(); o.vmode = vmode(); o.edLang = edCur;

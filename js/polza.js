@@ -4,17 +4,18 @@ const POLZA = "https://polza.ai/api/v1";
 $("key").addEventListener("input", () => { try { localStorage.setItem("vt-polza-key", $("key").value.trim()); } catch {} });
 async function polzaFetch(path, body, tries = 3) {
   const key = $("key").value.trim();
-  if (!key) throw new Error("Вставьте ключ Polza AI в поле вверху страницы.");
+  if (!key) throw Object.assign(new Error("Вставьте ключ Polza AI в поле вверху страницы."), { fatal: true });
+  const form = body instanceof FormData;   // файл (распознавание речи) — без JSON, заголовок ставит браузер
   for (let k = 1; ; k++) {
     let r;
     try {
-      r = await fetch(POLZA + path, { method: body ? "POST" : "GET", headers: { Authorization: "Bearer " + key, ...(body ? { "Content-Type": "application/json" } : {}) }, body: body ? JSON.stringify(body) : undefined });
+      r = await fetch(POLZA + path, { method: body ? "POST" : "GET", headers: { Authorization: "Bearer " + key, ...(body && !form ? { "Content-Type": "application/json" } : {}) }, body: body ? (form ? body : JSON.stringify(body)) : undefined });
     } catch { if (k < tries) { await new Promise((res) => setTimeout(res, 1500 * k)); continue; } throw new Error("Нет связи с Polza AI. Проверьте интернет."); }
     if (r.ok) return r;
     let d = null; try { d = await r.json(); } catch {}
     const msg = d?.error?.message || d?.message || r.statusText;
-    if (r.status === 401 || r.status === 403) throw new Error("Ключ Polza AI не подошёл. Проверьте его вверху страницы.");
-    if (r.status === 402) throw new Error("Polza AI: не хватает денег на балансе или исчерпан лимит ключа.");
+    if (r.status === 401 || r.status === 403) throw Object.assign(new Error("Ключ Polza AI не подошёл. Проверьте его вверху страницы."), { fatal: true });
+    if (r.status === 402) throw Object.assign(new Error("Polza AI: не хватает денег на балансе или исчерпан лимит ключа."), { fatal: true });
     if ((r.status === 429 || r.status >= 500) && k < tries) { await new Promise((res) => setTimeout(res, 2000 * k)); continue; }
     throw Object.assign(new Error(`Polza AI ответила ошибкой ${r.status}: ${msg}`), { status: r.status });
   }

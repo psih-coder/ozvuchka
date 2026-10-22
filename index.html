@@ -332,7 +332,11 @@
       <label title="Только на превью: где у YouTube Shorts кнопки и подпись"><input type="checkbox" id="subSafe"> Зоны YouTube Shorts</label>
     </div>
     <div class="row" style="margin-top:14px">
-      <button class="btn ghost" id="alignBtn" title="Нейросеть Whisper слушает готовый голос и ставит каждое слово точно. Работает в браузере, ~250 МБ скачивается один раз">🎯 Точное время слов (Whisper)</button>
+      <button class="btn ghost" id="alignBtn" title="Нейросеть Whisper слушает готовый голос и ставит каждое слово точно">🎯 Точное время слов (Whisper)</button>
+      <select id="asrWhere" style="width:auto; max-width:100%" title="Где Whisper слушает голос: в браузере — бесплатно, но ~250 МБ скачивается один раз и нужен мощный ПК; в Polza — быстро и на телефоне, ≈0,05 ₽ за минуту голоса">
+        <option value="local">💻 В браузере, бесплатно</option>
+        <option value="cloud">☁ Polza, ≈0,05 ₽/мин</option>
+      </select>
       <button class="btn ghost sm" data-subsrt="ru">⬇ .srt RU как на экране</button>
       <button class="btn ghost sm" data-subsrt="en">⬇ .srt EN как на экране</button>
       <span class="hint" id="subInfo"></span>

@@ -34,6 +34,29 @@ async function getAsr(where, say) {
   });
   return asrPipes[where];
 }
+// облако: Whisper в Polza — быстро и на телефоне; запасная модель, если первая не справилась
+const ASR_CLOUD = { turbo: "openai/whisper-large-v3-turbo", w1: "openai/whisper-1" };
+const isPhone = matchMedia("(pointer: coarse) and (hover: none)").matches;
+if (isPhone) $("asrWhere").value = "cloud";   // сохранённый выбор (restoreSet) всё равно главнее
+$("asrWhere").addEventListener("change", saveSet);
+async function recognizeCloud(model, buf, l) {
+  const fd = new FormData(), dur = buf.duration;
+  fd.append("file", bufToWav(await resampleTo(buf, 16000)), "voice.wav");
+  fd.append("model", model);
+  fd.append("language", l);
+  fd.append("response_format", "verbose_json");
+  fd.append("timestamp_granularities[]", "word");
+  fd.append("timestamp_granularities[]", "segment");
+  const d = await polza("/audio/transcriptions", fd), clip = (x) => Math.min(dur, Math.max(0, +x || 0));
+  let rec = (d.words || []).map((x) => ({ w: String(x.word ?? x.text ?? "").trim(), start: clip(x.start), end: clip(x.end) }));
+  // слов нет — делим каждый отрезок между его словами по числу букв
+  if (!rec.length) for (const s of d.segments || []) {
+    const ws = String(s.text || "").trim().split(/\s+/).filter(Boolean), st = clip(s.start), en = Math.max(st, clip(s.end));
+    const tot = ws.reduce((a, w) => a + (letters(w) || 1), 0); let acc = 0;
+    for (const w of ws) { const a = st + (en - st) * acc / tot; acc += letters(w) || 1; rec.push({ w, start: a, end: st + (en - st) * acc / tot }); }
+  }
+  return { rec: rec.filter((r) => /[\p{L}\p{N}]/u.test(r.w)).map((r) => ({ ...r, end: Math.max(r.start, r.end) })), cost: costOf(d) };
+}
 async function recognizeClip(pipe, buf, l) {
   const a16 = (await resampleTo(buf, 16000)).getChannelData(0);
   let pk = 0; for (const x of a16) pk = Math.max(pk, Math.abs(x));
@@ -63,23 +86,29 @@ async function alignAll(langs = LANGS) {
   const jobs = [];
   for (const l of langs) for (const c of S.cues) if (c[l].trim() && voiceFresh(c, l) && !c.v[l].words) jobs.push({ c, l });
   if (!jobs.length) { logTo("sLog", S.cues.some((c) => LANGS.some((l) => voiceFresh(c, l))) ? "Время слов уже точное для всех озвученных фраз." : "Сначала озвучьте фразы — Whisper слушает готовый голос.", "warn"); return; }
-  const li = logTo("sLog", "Загружаю Whisper…"), say = (m) => { li.textContent = "⏳ " + m; };
-  const order = (await gpu()).ok ? ["gpu", "cpu"] : ["cpu"];
-  let ok = 0, k = 0;
+  const cloud = $("asrWhere").value === "cloud";
+  const li = logTo("sLog", cloud ? "Отправляю голос в Polza…" : "Загружаю Whisper…"), say = (m) => { li.textContent = "⏳ " + m; };
+  const order = cloud ? ["turbo", "w1"] : (await gpu()).ok ? ["gpu", "cpu"] : ["cpu"];
+  let ok = 0, k = 0, cost = 0;
   for (const { c, l } of jobs) {
     if (S.sStop) throw STOP;
-    say(`Слушаю голос: фраза ${++k} из ${jobs.length} (#${num(c)} ${l.toUpperCase()})`);
+    say(`Слушаю голос: фраза ${++k} из ${jobs.length} (#${num(c)} ${l.toUpperCase()})${cloud ? " — Polza" : ""}`);
     const v = c.v[l], toks = tokens(c[l]), want = toks.reduce((a, w) => a + letters(w), 0);
     for (const where of order) {
       try {
-        const rec = await recognizeClip(await getAsr(where, say), v.buf, l);
+        let rec;
+        if (cloud) { const r = await recognizeCloud(ASR_CLOUD[where], v.buf, l); rec = r.rec; cost += r.cost; }
+        else rec = await recognizeClip(await getAsr(where, say), v.buf, l);
         if (looksRight(rec, want)) { v.words = mapWords(toks, rec, v.len); ok++; break; }
         console.warn(`Whisper (${where}) не похож на текст #${num(c)}`, rec);
-      } catch (e) { console.warn("Whisper:", where, e); if (where === order[order.length - 1] && !ok && k === 1) throw new Error("Whisper не запустился: " + (e.message || e)); }
+      } catch (e) {
+        if (e.fatal) throw e;   // нет ключа / ключ не подошёл / нет денег — дальше пробовать бессмысленно
+        console.warn("Whisper:", where, e); if (where === order[order.length - 1] && !ok && k === 1) throw new Error("Whisper не запустился: " + (e.message || e));
+      }
     }
     S.ver++;
   }
-  done(li, `Точное время слов: ${ok} из ${jobs.length} фраз${ok < jobs.length ? " (остальные — по длине слов)" : ""}`, ok ? "ok" : "warn");
+  done(li, `Точное время слов: ${ok} из ${jobs.length} фраз${ok < jobs.length ? " (остальные — по длине слов)" : ""}${cost ? ` · ${cost < 0.01 ? "меньше 0,01" : cost.toFixed(2).replace(".", ",")} ₽` : ""}`, ok ? "ok" : "warn");
   subInfo(); drawOverlay();
 }
 let sBusy = false;
