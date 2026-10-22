@@ -458,3 +458,10 @@
   .log:not(:empty) { margin-top: 14px; padding: 10px 14px; gap: 6px; font-size: 15px; line-height: 1.45;
     background: rgba(0,0,0,.28); border: 1px solid var(--line2); border-radius: 12px; }
   .log li.run { font-weight: 600; }
+  /* лог: лёгкий градиент; пока что-то выполняется (строка «⏳») — переливается, как ожидание */
+  .log:not(:empty) { background: linear-gradient(135deg, rgba(255,79,154,.09), rgba(155,140,255,.07) 55%, rgba(62,230,255,.06)), rgba(0,0,0,.28); }
+  .log:has(li.run) { border-color: rgba(255,79,154,.5); box-shadow: 0 0 0 3px rgba(255,79,154,.08), 0 0 24px rgba(255,79,154,.12);
+    background: linear-gradient(110deg, rgba(255,79,154,.16) 0%, rgba(255,159,67,.13) 25%, rgba(155,140,255,.16) 50%, rgba(255,159,67,.13) 75%, rgba(255,79,154,.16) 100%) 0 0 / 200% 100%, rgba(0,0,0,.3);
+    animation: logwait 2.8s linear infinite; }
+  @keyframes logwait { to { background-position: -200% 0, 0 0; } }
+  @media (prefers-reduced-motion: reduce) { .log:has(li.run) { animation: none; } }
