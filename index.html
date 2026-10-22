@@ -129,7 +129,7 @@
     <div class="hint" style="margin:10px 0 12px">Напишите текст сами или попросите ИИ — он появится здесь. Читайте, правьте, потом переходите к озвучке.</div>
     <div class="edbar">
       <div class="seg" id="edLang"><button data-v="ru" class="on">RU · русский</button><button data-v="en">EN · English</button></div>
-      <button class="btn sm" id="aiOpen">✨ Написать с ИИ</button>
+      <button class="btn sm" id="aiOpen" aria-expanded="false" title="Открыть настройки: о чём видео, стиль, модель — и написать">✨ Написать с ИИ <span class="dd">▾</span></button>
       <button class="btn ghost sm" id="edTr" title="Перевести весь текст на второй язык (нейросетью)">🌐 Перевести на EN</button>
       <button class="btn ghost sm" id="edImport" title="Загрузить текст или субтитры .srt">📂 Открыть файл</button>
       <input type="file" id="edFile" accept=".txt,.srt,.vtt,text/plain" hidden>
@@ -284,7 +284,8 @@
       </div>
       <div class="pvset">
     <div class="presets" id="subPresets"></div>
-    <div class="grid" style="margin-top:14px">
+    <label class="chk" style="margin-top:14px" title="Пока выключено, ползунки не сдвинуть случайно пальцем"><input type="checkbox" id="subUnlock"> ✏ Менять ползунки</label>
+    <div class="grid" style="margin-top:10px">
       <div><label class="f">Шрифт</label>
         <select id="subFont">
           <option value="montserrat">Montserrat — жирный</option><option value="russo">Russo One</option><option value="rubik">Rubik</option>

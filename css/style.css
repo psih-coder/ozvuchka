@@ -64,6 +64,10 @@
   .hint { font-size: 12.5px; color: var(--muted); }
   .hint b { color: var(--text); }
   input[type=range] { width: 100%; accent-color: var(--a1); }
+  input[type=range]:disabled { opacity: .4; cursor: not-allowed; }
+  .rlock { margin: 0 6px 0 0; vertical-align: -2px; accent-color: var(--a1); }
+  #aiOpen .dd { display: inline-block; margin-left: 2px; padding: 0 5px; border-radius: 6px; background: rgba(0,0,0,.18); transition: transform .2s; }
+  #aiOpen[aria-expanded="true"] .dd { transform: rotate(180deg); }
   input[type=checkbox] { accent-color: var(--a1); width: 16px; height: 16px; }
   .chk { display: inline-flex; gap: 7px; align-items: center; font-size: 13.5px; cursor: pointer; user-select: none; }
   .seg { display: inline-flex; background: rgba(0,0,0,.35); border: 1px solid var(--line); border-radius: 11px; padding: 3px; gap: 2px; }

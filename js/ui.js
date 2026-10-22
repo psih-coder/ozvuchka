@@ -60,3 +60,21 @@ function fitLayers() {
 }
 ["fullscreenchange", "webkitfullscreenchange"].forEach((ev) => document.addEventListener(ev, () => { fitLayers(); requestAnimationFrame(() => { drawOverlay(); applyGradePreview(); }); }));
 window.addEventListener("resize", () => { if (fsOn()) fitLayers(); paintPreviews(); });
+
+// ---- ползунки под галочкой: на телефоне их легко задеть пальцем, пока листаешь ----
+// «Голоса и эффекты» — своя галочка слева у каждого ползунка (карточки голосов пересоздаются — следим за новыми)
+function lockRange(r) {
+  if (r.dataset.lock) return;
+  r.dataset.lock = "1"; r.disabled = true;
+  const cb = document.createElement("input"); cb.type = "checkbox"; cb.className = "rlock"; cb.title = "Разрешить менять";
+  cb.addEventListener("change", () => { r.disabled = !cb.checked; });
+  const lab = r.previousElementSibling?.matches("label") ? r.previousElementSibling : null;
+  (lab || r.parentElement).prepend(cb);
+}
+const lockAll = () => $("voicesBox").querySelectorAll("input[type=range]").forEach(lockRange);
+new MutationObserver(lockAll).observe($("voicesBox"), { childList: true, subtree: true });
+lockAll();
+// «Субтитры» — одна галочка на все ползунки блока
+const subRanges = () => $("subsAcc").querySelectorAll("input[type=range]");
+$("subUnlock").addEventListener("change", () => subRanges().forEach((r) => { r.disabled = !$("subUnlock").checked; }));
+subRanges().forEach((r) => { r.disabled = true; });

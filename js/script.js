@@ -105,8 +105,8 @@ async function edTranslate(from, to) {
 }
 
 // ---- ИИ пишет сценарий прямо в окно ----
-$("aiOpen").onclick = () => { $("aiPanel").hidden = !$("aiPanel").hidden; if (!$("aiPanel").hidden) $("aiCtx").focus(); };
-$("aiClose").onclick = () => { $("aiPanel").hidden = true; };
+$("aiOpen").onclick = () => { $("aiPanel").hidden = !$("aiPanel").hidden; $("aiOpen").setAttribute("aria-expanded", !$("aiPanel").hidden); if (!$("aiPanel").hidden) $("aiCtx").focus(); };
+$("aiClose").onclick = () => { $("aiPanel").hidden = true; $("aiOpen").setAttribute("aria-expanded", "false"); };
 $("aiGo").onclick = () => runAi(aiScript);
 const FULL_SCHEMA = { name: "full_script", strict: true, schema: { type: "object", additionalProperties: false, required: ["lines"],
   properties: { lines: { type: "array", items: { type: "object", additionalProperties: false, required: ["start", "end", "ru", "en", "speaker_ru", "speaker_en"],
