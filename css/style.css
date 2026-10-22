@@ -32,7 +32,7 @@
   .keybox input { width: 230px; }
   #keyStatus { font-size: 12px; max-width: 220px; }
 
-  .wrap { max-width: 1320px; margin: 0 auto; padding: 18px 16px 80px; display: grid; gap: 18px; }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 18px 16px 80px; display: grid; gap: 30px; }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 18px;
     box-shadow: 0 1px 0 rgba(255,255,255,.04) inset, 0 20px 50px rgba(0,0,0,.25); min-width: 0; }
   h2 { font-size: 18px; margin: 0; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; }
@@ -333,7 +333,7 @@
     .tip-touch { display: inline; }
   }
   @media (max-width: 700px) {
-    .wrap { padding: 10px 10px 60px; gap: 12px; }
+    .wrap { padding: 10px 10px 60px; gap: 22px; }
     .card { padding: 14px 12px; border-radius: 18px; }
     .top .in { padding: 8px 10px; gap: 8px; }
     .brand small, #videoCard .tabhead .hint { display: none; }
@@ -404,3 +404,13 @@
   #keyPill.nokey { border-color: rgba(255,159,67,.6); color: #ffb26b; }
   #keyPill.ok #keyPillT::before { content: "● "; color: var(--ok); }
   @media (max-width: 520px) { .top .mtxt { display: none; } .brand b { font-size: 15px; } }
+
+  /* у каждого шага свой цвет: полоса слева, рамка, лёгкий оттенок сверху и номер шага */
+  #videoCard { --acc: #ff4f9a; } #scriptCard { --acc: #9b8cff; } #voiceCard { --acc: #ff9f43; } #musicCard { --acc: #3ddc97; }
+  #subsCard { --acc: #ffd23f; } #gradeCard { --acc: #3ee6ff; } #renderCard { --acc: #5b9dff; }
+  .wrap > .card[id] { border-color: color-mix(in srgb, var(--acc) 38%, var(--line));
+    background: linear-gradient(180deg, color-mix(in srgb, var(--acc) 9%, var(--card)) 0, var(--card) 180px);
+    box-shadow: inset 4px 0 0 var(--acc), 0 10px 30px rgba(0,0,0,.25); }
+  .wrap > .card[id] .stepn { background: var(--acc); box-shadow: 0 0 0 4px color-mix(in srgb, var(--acc) 22%, transparent); }
+  .wrap > .card[id] > .accd > summary h2, .wrap > .card[id] > .tabhead h2 { color: color-mix(in srgb, var(--acc) 30%, var(--text)); }
+  @media (max-width: 700px) { .wrap > .card[id] { box-shadow: inset 3px 0 0 var(--acc); } }
