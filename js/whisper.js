@@ -128,7 +128,6 @@ async function videoAudio16k(say) {
   try {
     const at = await input.getPrimaryAudioTrack();
     if (!at) throw new Error("В видео нет звуковой дорожки.");
-    if (!(await at.canDecode())) throw new Error("Браузер не может прочитать звук этого видео. Попробуйте mp4 со звуком AAC.");
     const dur = (await input.computeDuration()) || S.dur, out = [];
     let blk = [], blkN = 0, sr = at.sampleRate, done16 = 0;
     // копим ~30 с исходного звука и пересэмплируем кусками — так быстро и без лишней памяти
@@ -140,15 +139,25 @@ async function videoAudio16k(say) {
       blk = []; blkN = 0;
       say(`Достаю звук из видео: ${Math.min(100, Math.round(done16 / 16000 / Math.max(1, dur) * 100))}%`);
     };
-    for await (const { buffer } of new mb.AudioBufferSink(at).buffers()) {
-      if (S.sStop) throw STOP;
-      sr = buffer.sampleRate;
-      const n = buffer.length, m = new Float32Array(n), ch = buffer.numberOfChannels;
-      for (let c = 0; c < ch; c++) { const s = buffer.getChannelData(c); for (let i = 0; i < n; i++) m[i] += s[i] / ch; }
-      blk.push(m); blkN += n;
-      if (blkN >= sr * 30) await flush();
+    try {
+      if (!(await at.canDecode())) throw new Error("decoding not supported");
+      for await (const { buffer } of new mb.AudioBufferSink(at).buffers()) {
+        if (S.sStop) throw STOP;
+        sr = buffer.sampleRate;
+        const n = buffer.length, m = new Float32Array(n), ch = buffer.numberOfChannels;
+        for (let c = 0; c < ch; c++) { const s = buffer.getChannelData(c); for (let i = 0; i < n; i++) m[i] += s[i] / ch; }
+        blk.push(m); blkN += n;
+        if (blkN >= sr * 30) await flush();
+      }
+      await flush();
+    } catch (e) {
+      if (!isDecodeErr(e)) throw e;
+      // браузер (чаще на телефоне) не раскодировал звук по кусочкам — встроенным декодером весь файл сразу, в 16 кГц
+      say("Достаю звук из видео запасным способом…");
+      const w = await wholeAudio(16000), m = new Float32Array(w.length), ch = w.numberOfChannels;
+      for (let c = 0; c < ch; c++) { const s = w.getChannelData(c); for (let i = 0; i < m.length; i++) m[i] += s[i] / ch; }
+      return m;
     }
-    await flush();
     const all = new Float32Array(done16); let o = 0; for (const p of out) { all.set(p, o); o += p.length; }
     return all;
   } finally { input.dispose?.(); }

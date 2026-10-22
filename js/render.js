@@ -23,18 +23,41 @@ async function mixAudio({ mb, at, asrc, clips, dur, sr, nch, origVol, vg, onProg
   };
   const silence = async (sec) => { while (sec > 1e-4) { const n = Math.min(sr, Math.ceil(sec * sr)); await push(Array.from({ length: nch }, () => new Float32Array(n))); sec -= n / sr; } };
   if (at && origVol > 0) {
-    for await (const { buffer, timestamp } of new mb.AudioBufferSink(at).buffers()) {
-      if (isStop()) throw STOP;
+    const feed = async ({ buffer, timestamp }) => {
       if (timestamp > tDone + 0.005) await silence(Math.min(dur, timestamp) - tDone);
-      if (tDone >= dur) break;
+      if (tDone >= dur) return;
       const skip = Math.max(0, Math.round((tDone - timestamp) * sr));
       const len = Math.min(buffer.length - skip, Math.ceil((dur - tDone) * sr));
-      if (len <= 0) continue;
+      if (len <= 0) return;
       await push(Array.from({ length: nch }, (_, i) => { const s = buffer.getChannelData(Math.min(i, buffer.numberOfChannels - 1)).subarray(skip, skip + len), d = new Float32Array(len); for (let j = 0; j < len; j++) d[j] = s[j] * origVol; return d; }));
+    };
+    try {
+      if (!(await at.canDecode())) throw new Error("decoding not supported");
+      for await (const b of new mb.AudioBufferSink(at).buffers()) { if (isStop()) throw STOP; if (tDone >= dur) break; await feed(b); }
+    } catch (e) {
+      if (!isDecodeErr(e)) throw e;
+      // браузер (чаще на телефоне) не раскодировал звук по кусочкам — берём звук файла целиком и продолжаем с того же места
+      const w = await wholeAudio(sr);
+      for (let s = Math.floor(tDone * sr); s < w.length && tDone < dur; s += sr) {
+        if (isStop()) throw STOP;
+        const n = Math.min(sr, w.length - s), b = new AudioBuffer({ length: n, numberOfChannels: w.numberOfChannels, sampleRate: sr });
+        for (let c = 0; c < w.numberOfChannels; c++) b.copyToChannel(w.getChannelData(c).subarray(s, s + n), c);
+        await feed({ buffer: b, timestamp: s / sr });
+      }
     }
   }
   if (tDone < dur) await silence(dur - tDone);
   asrc.close(); onProg(1);
+}
+// запасной декодер звука: встроенный в браузер, весь файл сразу (WebCodecs на телефонах иногда не справляется)
+const isDecodeErr = (e) => e !== STOP && e !== CANCEL && /decod/i.test(e?.message || e?.name || "");
+let wholeA = null;
+async function wholeAudio(sr) {
+  if (wholeA?.file === S.file && wholeA.sr === sr) return wholeA.buf;
+  let buf;
+  try { buf = await new OfflineAudioContext(2, 1, sr).decodeAudioData(await S.file.arrayBuffer()); }
+  catch { throw new Error("Браузер не смог прочитать звук этого видео даже запасным способом. Попробуйте на компьютере в Chrome или пересохраните видео в mp4 (H.264 + AAC)."); }
+  wholeA = { file: S.file, sr, buf }; return buf;
 }
 const evenUp = (x) => Math.max(2, Math.round(x / 2) * 2);
 function outSize(srcW, srcH) {
@@ -107,7 +130,7 @@ async function renderOne(l, sl) {
     const srcRate = S.file.size * 8 / Math.max(1, S.dur) * (W * H) / (srcW * srcH);
     const bitrate = Math.round(clamp(Math.max(W * H * Math.min(fps, 60) * +$("rQ").value, srcRate * 1.3), 2.5e6, 80e6));
     if (!(await mb.canEncodeVideo("avc", { width: W, height: H, bitrate }))) throw new Error(`Видеокарта не кодирует H.264 в ${W}×${H}. Выберите размер меньше.`);
-    const origVol = l === "orig" ? 1 : +$("mixOrig").value / 100, useOrig = !!(at && origVol > 0 && (await at.canDecode()));
+    const origVol = l === "orig" ? 1 : +$("mixOrig").value / 100, useOrig = !!(at && origVol > 0);
     if (l === "orig" && !useOrig) throw new Error("В видео нет звука, который браузер может прочитать.");
     const sr = useOrig ? at.sampleRate : 48000, nch = useOrig ? Math.min(2, at.numberOfChannels) : 2;
     if (!(await mb.canEncodeAudio("aac", { numberOfChannels: nch, sampleRate: sr, bitrate: 192e3 }))) throw new Error("Браузер не умеет кодировать звук AAC.");

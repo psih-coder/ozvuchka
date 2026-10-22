@@ -57,7 +57,7 @@ async function exportVideo(l, onBlob, bar) {
     const at = await input.getPrimaryAudioTrack();
     const toMp4 = ["avc", "hevc", "vp9", "av1"].includes(vt.codec), ext = toMp4 ? "mp4" : "webm";
     const origVol = +$("mixOrig").value / 100;
-    const useOrig = !!(at && origVol > 0 && (await at.canDecode()));
+    const useOrig = !!(at && origVol > 0);
     const sr = useOrig ? at.sampleRate : 48000, nch = useOrig ? Math.min(2, at.numberOfChannels) : 2;
     const acodec = toMp4 ? "aac" : "opus";
     if (!(await mb.canEncodeAudio(acodec, { numberOfChannels: nch, sampleRate: sr, bitrate: 192e3 }))) throw new Error(`Браузер не умеет кодировать звук ${acodec}.`);
