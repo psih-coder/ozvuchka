@@ -16,16 +16,18 @@ async function gpu() {
 }
 async function getAsr(where, say) {
   if (asrPipes[where]) return asrPipes[where];
-  const { pipeline } = await loadTF(), g = await gpu(), files = {}, net = new Set();
+  const MODEL = "onnx-community/whisper-small_timestamped", { pipeline } = await loadTF(), g = await gpu(), files = {}, net = new Set();
   // модель лежит в кэше браузера — просим не удалять его, когда мало места
   try { await navigator.storage?.persist?.(); } catch {}
-  asrPipes[where] = await pipeline("automatic-speech-recognition", "onnx-community/whisper-small_timestamped", {
+  // какие файлы модели уже в кэше: библиотека шлёт «download» и «progress» и при чтении из кэша — сама не различает
+  const have = [];
+  try { for (const r of await (await caches.open("transformers-cache")).keys()) if (r.url.includes(MODEL)) have.push(r.url); } catch {}
+  asrPipes[where] = await pipeline("automatic-speech-recognition", MODEL, {
     device: where === "gpu" ? "webgpu" : "wasm",
     dtype: where === "gpu" ? { encoder_model: g.f16 ? "fp16" : "fp32", decoder_model_merged: g.f16 ? "fp16" : "fp32" } : "q8",
     progress_callback: (p) => {
-      // «download» приходит только когда файла нет в кэше; «progress» — и при скачивании, и при чтении из кэша
-      if (p.status === "download") { net.add(p.file); return; }
       if (p.status !== "progress" || !p.total) return;
+      if (!have.some((u) => u.endsWith("/" + p.file))) net.add(p.file);
       files[p.file] = [p.loaded, p.total];
       let a = 0, b = 0; for (const [x, y] of Object.values(files)) { a += x; b += y; }
       const mb = `${(a / 1e6).toFixed(0)} из ${(b / 1e6).toFixed(0)} МБ`;
@@ -34,8 +36,8 @@ async function getAsr(where, say) {
   });
   return asrPipes[where];
 }
-// облако: Whisper в Polza — быстро и на телефоне; запасная модель, если первая не справилась
-const ASR_CLOUD = { turbo: "openai/whisper-large-v3-turbo", w1: "openai/whisper-1" };
+// облако: Whisper в Polza — быстро и на телефоне; время слов (verbose_json) отдаёт только Whisper 1, turbo — один текст
+const ASR_CLOUD = { w1: "openai/whisper-1" };
 const isPhone = matchMedia("(pointer: coarse) and (hover: none)").matches;
 if (isPhone) $("asrWhere").value = "cloud";   // сохранённый выбор (restoreSet) всё равно главнее
 $("asrWhere").addEventListener("change", saveSet);
@@ -89,7 +91,7 @@ async function alignAll(langs = LANGS) {
   if (!jobs.length) { logTo("sLog", S.cues.some((c) => LANGS.some((l) => voiceFresh(c, l))) ? "Время слов уже точное для всех озвученных фраз." : "Сначала озвучьте фразы — Whisper слушает готовый голос.", "warn"); return; }
   const cloud = $("asrWhere").value === "cloud";
   const li = logTo("sLog", cloud ? "Отправляю голос в Polza…" : "Загружаю Whisper…"), say = (m) => { li.textContent = "⏳ " + m; };
-  const order = cloud ? ["turbo", "w1"] : (await gpu()).ok ? ["gpu", "cpu"] : ["cpu"];
+  const order = cloud ? ["w1"] : (await gpu()).ok ? ["gpu", "cpu"] : ["cpu"];
   let ok = 0, k = 0, cost = 0;
   for (const { c, l } of jobs) {
     if (S.sStop) throw STOP;
@@ -177,6 +179,22 @@ function phrasesOf(words, segs) {
   push();
   return out;
 }
+// сколько секунд в куске звучит голос (громче 6% от пика) — чтобы понять, не мало ли распознано
+function speechSecs(a, sr = 16000) {
+  const fr = Math.round(sr * 0.02), n = Math.floor(a.length / fr), rms = new Float32Array(n);
+  let mx = 0;
+  for (let f = 0; f < n; f++) { let q = 0; for (let i = f * fr; i < (f + 1) * fr; i += 2) q += a[i] * a[i]; rms[f] = Math.sqrt(q / (fr / 2)); mx = Math.max(mx, rms[f]); }
+  let on = 0; for (const r of rms) if (r > mx * 0.06) on++;
+  return on * 0.02;
+}
+// распознанное похоже на речь: букв примерно сколько успели бы сказать, без зацикливания
+function asrPlausible(rec, sec, l) {
+  if (sec < 1) return true;
+  const got = rec.reduce((a, r) => a + spoken(r.w, l), 0), want = sec * CPS[l];
+  const cnt = {}; rec.forEach((r) => { const k = r.w.toLowerCase(); cnt[k] = (cnt[k] || 0) + 1; });
+  return got > want * 0.3 && got < want * 3 && (rec.length < 6 || Math.max(...Object.values(cnt)) / rec.length < 0.3);
+}
+let gpuBad = false;   // видеокарта уже выдала мусор — дальше в этой сессии только процессор
 async function transcribeVideo() {
   if (!S.file) throw new Error("Сначала загрузите видео в шаге 1.");
   const l = $("audLang").value, cloud = $("asrWhere").value === "cloud";
@@ -194,16 +212,24 @@ async function transcribeVideo() {
       buf.copyToChannel(a.subarray(f, t), 0);
       say(`Слушаю голос${parts.length > 1 ? `: часть ${i + 1} из ${parts.length}` : ""} (${fmt(off, 0)}–${fmt(t / 16000, 0)})${cloud ? " — Polza" : ""}`);
       let rec = [], sg = [];
+      const sec = speechSecs(a.subarray(f, t));
       if (cloud) {
         let r = null;
-        for (const m of [ASR_CLOUD.turbo, ASR_CLOUD.w1]) {
-          try { r = await recognizeCloud(m, buf, l); if (r.rec.length) break; }
-          catch (e) { if (e.fatal) throw e; console.warn("Whisper:", m, e); if (m === ASR_CLOUD.w1) throw new Error("Polza не распознала звук: " + (e.message || e)); }
+        for (const m of [ASR_CLOUD.w1]) {
+          try { const x = await recognizeCloud(m, buf, l); cost += x.cost; if (!r || x.rec.length > r.rec.length) r = x; if (asrPlausible(x.rec, sec, l)) break; console.warn(`Whisper (${m}) распознал мало для ${sec.toFixed(0)} с речи`, x.rec); }
+          catch (e) { if (e.fatal) throw e; console.warn("Whisper:", m, e); if (m === ASR_CLOUD.w1 && !r) throw new Error("Polza не распознала звук: " + (e.message || e)); }
         }
-        rec = r.rec; sg = r.segs; cost += r.cost;
+        rec = r.rec; sg = r.segs;
       } else {
-        const g = await gpu();
-        rec = await recognizeClip(await getAsr(g.ok ? "gpu" : "cpu", say), buf, l);
+        const order = (await gpu()).ok && !gpuBad ? ["gpu", "cpu"] : ["cpu"];
+        for (const where of order) {
+          try {
+            rec = await recognizeClip(await getAsr(where, say), buf, l);
+            if (asrPlausible(rec, sec, l)) break;
+            console.warn(`Whisper (${where}) распознал мало для ${sec.toFixed(0)} с речи`, rec);
+          } catch (e) { console.warn("Whisper:", where, e); if (where === "cpu") throw new Error("Whisper не запустился: " + (e.message || e)); }
+          if (where === "gpu") { gpuBad = true; say("Видеокарта ошиблась — повторяю на процессоре…"); }
+        }
       }
       words.push(...rec.map((w) => ({ w: w.w, start: +(w.start + off).toFixed(2), end: +(w.end + off).toFixed(2) })));
       segs.push(...sg.map((s) => ({ ...s, start: s.start + off, end: s.end + off })));

@@ -159,7 +159,9 @@ async function renderOne(l, sl) {
       vsrc.close(); vp = 1; prog();
     };
     const audioLoop = () => mixAudio({ mb, at: useOrig ? at : null, asrc, clips, dur, sr, nch, origVol, vg, onProg: (p) => { ap = p; prog(); }, isStop: () => S.rStop });
-    await Promise.all([videoLoop(), audioLoop()].map((p) => p.catch((e) => { S.rStop = true; throw e; })));
+    const what = (e, part) => (e === STOP || e === CANCEL || !/decod/i.test(e?.message || e?.name || "") ? e
+      : new Error(`Браузер не смог прочитать ${part} этого видео (${e.message}). Обычно так бывает с видео в HEVC/H.265 или после пересжатия мессенджером — попробуйте на компьютере в Chrome или пересохраните видео в mp4 (H.264).`));
+    await Promise.all([videoLoop().catch((e) => { throw what(e, "кадры"); }), audioLoop().catch((e) => { throw what(e, "звук"); })].map((p) => p.catch((e) => { S.rStop = true; throw e; })));
     await output.finalize();
     const secs = Math.round((performance.now() - t0) / 1000);
     if (writable) { try { await writable.close(); } catch {} done(li, `Рендер ${lab} готов за ${secs} с — записан на диск (${name})`); showResult(null, name, l, true); }
