@@ -191,16 +191,19 @@
   .edhelp summary { cursor: pointer; color: var(--muted); } .edhelp div { margin-top: 6px; line-height: 1.7; max-width: 560px; }
   .aipanel { border: 1px solid rgba(255,79,154,.35); border-radius: 18px; padding: 14px; background: rgba(255,79,154,.04); margin-bottom: 12px; }
   .checks2 { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 12px; }
-  .vmodes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
-  .mcard { display: grid; gap: 2px; padding: 14px 16px 14px 44px; position: relative; border: 1px solid var(--line); border-radius: 16px; background: rgba(0,0,0,.25); cursor: pointer; }
-  .mcard input { position: absolute; left: 16px; top: 17px; accent-color: var(--a1); width: 17px; height: 17px; }
-  .mcard b { font-size: 15.5px; } .mcard small { color: var(--muted); font-size: 12.5px; }
+  /* «Как озвучить» — компактный переключатель внизу шага, описание выбранного режима — строкой под ним */
+  .vmodebox { margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--line); }
+  .vmodes { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .mcard { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px 7px 12px; position: relative; border: 1px solid var(--line); border-radius: 11px; background: rgba(0,0,0,.25); cursor: pointer; }
+  .mcard input { margin: 0; accent-color: var(--a1); width: 15px; height: 15px; }
+  .mcard b { font-size: 14px; }
+  .vmdesc { margin-top: 6px; }
   .mcard:has(input:checked) { border-color: rgba(255,79,154,.6); background: rgba(255,79,154,.07); box-shadow: 0 0 0 3px rgba(255,79,154,.1); }
   #voiceCard[data-vmode=solid] .only-phrases, #voiceCard[data-vmode=phrases] .only-solid { display: none !important; }
   .vblock { border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; margin-top: 14px; background: rgba(255,255,255,.015); }
   .vblock > summary { cursor: pointer; font-weight: 800; font-size: 14.5px; }
   .bigbtn { padding: 13px 26px; font-size: 16.5px; border-radius: 14px; }
-  @media (max-width: 700px) { .vmodes { grid-template-columns: 1fr; } .edrange { margin-left: 0; } .top { position: static; } }
+  @media (max-width: 700px) { .edrange { margin-left: 0; } .top { position: static; } }
   .pane[data-mode=full] .only-segs, .pane[data-mode=segs] .only-full, .pane[data-mode=solid] .only-full, .pane[data-mode=solid] .only-segs,
   .pane:not([data-mode=solid]) .only-solid, .pane[data-mode=segs] .only-fs { display: none !important; }
   .modesw { margin-bottom: 12px; } .modesw button { padding: 7px 14px; font-size: 13.5px; }

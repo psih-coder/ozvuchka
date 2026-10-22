@@ -216,15 +216,6 @@
       <span class="chev">▾</span>
     </summary>
     <div class="hint" style="margin:10px 0 12px">Берёт текст из сценария выше. Выберите, как озвучить, и голоса.</div>
-    <div class="vmodes">
-      <label class="mcard"><input type="radio" name="vmode" value="solid" checked><b>🎙 Целиком</b><small>весь текст одним дублем — без пауз и обрывов между фразами</small></label>
-      <label class="mcard"><input type="radio" name="vmode" value="phrases"><b>📜 По фразам</b><small>фразы расставляются по видео; разные голоса по именам; таймкоды из сценария</small></label>
-    </div>
-    <div class="grid only-phrases" style="margin-top:12px">
-      <div><label class="f">Как резать на фразы</label><select id="fsSplit"><option value="sent">По предложениям</option><option value="line">Строка = фраза</option><option value="short">Короткими кусками (до ~4 с)</option></select></div>
-      <div><label class="f">Фразы без таймкода</label><select id="fsPlace"><option value="spread">Равномерно по куску видео</option><option value="seq">Подряд, с паузами</option></select></div>
-      <div><label class="f">Пауза между фразами: <b id="fsGapV" style="color:var(--text)">0,4 с</b></label><input type="range" id="fsGap" min="0" max="2" step="0.1" value="0.4"></div>
-    </div>
     <details class="vblock" id="voicesBox">
       <summary><span class="vbt">🗣 Голоса и эффекты</span> <span class="hint" id="voicesSum"></span><span class="chev">▾</span></summary>
       <div class="vgrid" id="vCards" style="margin-top:12px"></div>
@@ -263,6 +254,19 @@
       </div>
       <div class="list" id="listManual" data-empty="Фраз пока нет — они появятся после «🎙 Озвучить»."></div>
     </details>
+    <div class="vmodebox">
+      <div class="vmodes">
+        <span class="hint">Как озвучить:</span>
+        <label class="mcard" title="весь текст одним дублем — без пауз и обрывов между фразами"><input type="radio" name="vmode" value="solid" checked><b>🎙 Целиком</b></label>
+        <label class="mcard" title="фразы расставляются по видео; разные голоса по именам; таймкоды из сценария"><input type="radio" name="vmode" value="phrases"><b>📜 По фразам</b></label>
+      </div>
+      <div class="hint vmdesc"><span class="only-solid">Весь текст одним дублем — без пауз и обрывов между фразами.</span><span class="only-phrases">Фразы расставляются по видео; разные голоса по именам; таймкоды из сценария.</span></div>
+    <div class="grid only-phrases" style="margin-top:10px">
+      <div><label class="f">Как резать на фразы</label><select id="fsSplit"><option value="sent">По предложениям</option><option value="line">Строка = фраза</option><option value="short">Короткими кусками (до ~4 с)</option></select></div>
+      <div><label class="f">Фразы без таймкода</label><select id="fsPlace"><option value="spread">Равномерно по куску видео</option><option value="seq">Подряд, с паузами</option></select></div>
+      <div><label class="f">Пауза между фразами: <b id="fsGapV" style="color:var(--text)">0,4 с</b></label><input type="range" id="fsGap" min="0" max="2" step="0.1" value="0.4"></div>
+    </div>
+    </div>
     <div class="row" style="margin-top:18px">
       <span class="hint">Озвучить:</span>
       <label class="chk"><input type="checkbox" id="voRu" checked> <span class="tag-ru">RU</span></label>
