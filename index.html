@@ -232,14 +232,6 @@
         </div>
       </div>
     </details>
-
-    <div class="vgrid" style="margin-top:14px">
-      <div class="vcol track" data-lang="ru"><h3><span class="tag-ru">●</span> Русская дорожка</h3><div class="vsum" id="vsum_ru"></div>
-        <div class="exp"><button class="btn ghost sm" data-exp="wav" data-lang="ru" title="Дорожка длиной с видео — ставится в монтажке на 0:00">⬇ WAV</button><button class="btn ghost sm" data-exp="srt" data-lang="ru">⬇ .srt</button></div></div>
-      <div class="vcol track" data-lang="en"><h3><span class="tag-en">●</span> Английская дорожка</h3><div class="vsum" id="vsum_en"></div>
-        <div class="exp"><button class="btn ghost sm" data-exp="wav" data-lang="en" title="Дорожка длиной с видео — ставится в монтажке на 0:00">⬇ WAV</button><button class="btn ghost sm" data-exp="srt" data-lang="en">⬇ .srt</button></div></div>
-    </div>
-
     <details class="vblock" id="fineBox" style="margin-top:16px">
       <summary>⚙ Тонкая настройка по таймкодам <span class="hint" id="cueCount"></span></summary>
       <div class="hint" style="margin:10px 0 0">Здесь — фразы после озвучки: можно подвинуть время (или на таймлайне сверху), поправить текст, сменить голос и озвучить только изменённое кнопкой «🎙 Озвучить».
@@ -254,6 +246,8 @@
       </div>
       <div class="list" id="listManual" data-empty="Фраз пока нет — они появятся после «🎙 Озвучить»."></div>
     </details>
+
+
     <div class="vmodebox">
       <div class="vmodes">
         <span class="hint">Как озвучить:</span>
@@ -283,6 +277,12 @@
     </div>
     <progress id="vBar" value="0" max="100" hidden></progress>
     <ul class="log" id="vLog"></ul>
+    <div class="vgrid tracks" style="margin-top:14px">
+      <div class="vcol track" data-lang="ru"><h3><span class="tag-ru">●</span> Русская дорожка</h3><div class="vsum" id="vsum_ru"></div>
+        <div class="exp"><button class="btn ghost sm" data-exp="wav" data-lang="ru" title="Дорожка длиной с видео — ставится в монтажке на 0:00">⬇ WAV</button><button class="btn ghost sm" data-exp="srt" data-lang="ru">⬇ .srt</button></div></div>
+      <div class="vcol track" data-lang="en"><h3><span class="tag-en">●</span> Английская дорожка</h3><div class="vsum" id="vsum_en"></div>
+        <div class="exp"><button class="btn ghost sm" data-exp="wav" data-lang="en" title="Дорожка длиной с видео — ставится в монтажке на 0:00">⬇ WAV</button><button class="btn ghost sm" data-exp="srt" data-lang="en">⬇ .srt</button></div></div>
+    </div>
    </details>
   </section>
 

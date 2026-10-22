@@ -431,3 +431,13 @@
   @media (max-width: 700px) { .wrap > .card[id] { box-shadow: inset 3px 0 0 var(--acc); } }
   /* «Точное время слов» — свой цвет, чтобы не сливалась с «Субтитрами по голосу из видео» */
   #alignBtn { background: linear-gradient(135deg, #3ee6ff, #5b9dff); color: #06121c; box-shadow: 0 6px 20px rgba(62,230,255,.22); }
+  /* «Тонкая настройка» — спокойный серо-синий, не спорит с «Голосами и эффектами» */
+  #fineBox { border-color: rgba(120,150,210,.28); background: rgba(120,150,210,.05); }
+  #fineBox > summary { color: #c9d4ea; }
+  /* дорожки RU / EN — внизу шага, компактно */
+  .tracks .vcol { padding: 9px 12px; gap: 6px; border-radius: 14px; }
+  .tracks h3 { font-size: 13.5px; margin: 0; }
+  .tracks .vsum { font-size: 12.5px; }
+  .tracks .btn.sm { padding: 4px 10px; font-size: 12.5px; }
+
+  @media (max-width: 520px) { .vmodes > .hint { flex-basis: 100%; } }
