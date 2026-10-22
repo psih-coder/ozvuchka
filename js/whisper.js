@@ -272,7 +272,7 @@ function origWords(c, l, toks) {
 }
 // правки сценария сразу меняют фразы (пока проект не озвучен — после озвучки фразы собирает «Озвучить»)
 function syncFromScript(l) {
-  if (S.arec?.l !== l || S.cues.some((c) => LANGS.some((x) => c.v[x]))) return;
+  if (S.arec?.l !== l || S.handEdited || S.cues.some((c) => LANGS.some((x) => c.v[x]))) return;
   let prev = 0;
   S.cues = parseScript(S.script[l], l).lines.map((x) => { const st = x.t0 ?? prev, c = newCue(st, x.t1); c[l] = x.text; prev = x.t1 ?? st + 1; return c; });
   sortCues(); S.ver++; renderAll(); drawOverlay();

@@ -36,16 +36,7 @@ function undo() { const h = hist.pop(); if (!h) return toast("Нечего от�
 let saveT;
 function save() {
   clearTimeout(saveT);
-  saveT = setTimeout(() => { cuesToScript(); LS.set("vo-project", projData()); }, 300);
-}
-// субтитры из звука видео: правки фраз (тонкая настройка, таймлайн, «Сейчас») сразу попадают в сценарий,
-// а правки сценария — во фразы (syncFromScript). Пока печатают в окне сценария — не трогаем его
-function cuesToScript() {
-  const l = S.arec?.l;
-  if (!l || document.activeElement === $("edText") || S.cues.some((c) => LANGS.some((x) => c.v[x]))) return;
-  const t = S.cues.filter((c) => c[l].trim()).map((c) => `${fmt(c.start)} - ${fmt(effEnd(c))} ${c[l].replace(/\s*\n\s*/g, " ").trim()}`).join("\n");
-  if (t === S.script[l]) return;
-  S.script[l] = t; if (edCur === l) $("edText").value = t; edInfo();
+  saveT = setTimeout(() => LS.set("vo-project", projData()), 300);
 }
 function projData() {
   return { app: "voiceover", ver: 2, video: { name: S.name, dur: S.dur }, script: S.script, builtSig: S.builtSig || null, handEdited: !!S.handEdited, arec: S.arec || null, music: M.buf ? Object.fromEntries(M_KEYS.map((k) => [k, M[k]])) : null, cues: S.cues.map(({ start, end, ru, en, prompt, vp }) => ({ start, end, ru, en, prompt, vp })) };
