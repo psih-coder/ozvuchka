@@ -21,7 +21,7 @@ function renderSum() {
 }
 ["rVoice", "rRes"].forEach((id) => $(id).addEventListener("change", renderSum));
 renderSum();
-for (const id of ["scriptAcc", "voiceAcc", "musicAcc", "subsAcc", "gradeAcc", "renderAcc", "voicesBox"]) {
+for (const id of ["scriptAcc", "voiceAcc", "musicAcc", "subsAcc", "gradeAcc", "renderAcc", "voicesBox", "fineBox", "subSetBox"]) {
   $(id).open = !!LS.get("vo-acc", {})[id];
   $(id).addEventListener("toggle", () => { const o = LS.get("vo-acc", {}); o[id] = $(id).open; LS.set("vo-acc", o); if ($(id).open) requestAnimationFrame(paintPreviews); });
 }

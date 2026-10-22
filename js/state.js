@@ -80,6 +80,8 @@ function restoreSet() {
     if (el.type === "checkbox") el.checked = o[id];
     else if (el.tagName !== "SELECT" || [...el.options].some((x) => x.value === o[id])) el.value = o[id];
   }
+  // EN в «Озвучить» теперь по умолчанию выключен — один раз сбрасываем и сохранённую галочку
+  if (!LS.get("vo-en-off", false)) { $("voEn").checked = false; LS.set("vo-en-off", true); }
   if (o.prevLang) setSeg("prevLang", o.prevLang);
   if (o.vmode) setVmode(o.vmode);
   if (o.edLang) edCur = o.edLang;

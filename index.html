@@ -265,7 +265,7 @@
     <div class="row" style="margin-top:18px">
       <span class="hint">Озвучить:</span>
       <label class="chk"><input type="checkbox" id="voRu" checked> <span class="tag-ru">RU</span></label>
-      <label class="chk"><input type="checkbox" id="voEn" checked> <span class="tag-en">EN</span></label>
+      <label class="chk"><input type="checkbox" id="voEn"> <span class="tag-en">EN</span></label>
       <span class="hint only-solid" style="margin-left:14px">Голос:</span>
       <label class="chk only-solid"><span class="tag-ru">RU</span> <select id="solV_ru" class="solvsel" data-l="ru" style="width:auto"></select></label>
       <label class="chk only-solid"><span class="tag-en">EN</span> <select id="solV_en" class="solvsel" data-l="en" style="width:auto"></select></label>
@@ -332,61 +332,64 @@
       </div>
       <div class="pvset">
     <div class="presets" id="subPresets"></div>
-    <label class="chk" style="margin-top:14px" title="Пока выключено, ползунки не сдвинуть случайно пальцем"><input type="checkbox" id="subUnlock"> ✏ Менять ползунки</label>
-    <div class="grid" style="margin-top:10px">
-      <div><label class="f">Шрифт</label>
-        <select id="subFont">
-          <option value="montserrat">Montserrat — жирный</option><option value="russo">Russo One</option><option value="rubik">Rubik</option>
-          <option value="oswald">Oswald — узкий</option><option value="unbounded">Unbounded — широкий</option><option value="comfortaa">Comfortaa — округлый</option>
-          <option value="exo">Exo 2 — игровой</option>
-          <option value="manrope">Manrope — спокойный, классика</option><option value="ptserif">PT Serif — с засечками</option><option value="playfair">Playfair — кино, с засечками</option>
-        </select></div>
-      <div><label class="f">Слов на экране</label>
-        <select id="subWords">
-          <option value="1">По одному</option><option value="2" selected>По 1–2</option><option value="3">По 2–3</option>
-          <option value="5">По 4–5</option><option value="8">Фраза целиком (как на YouTube)</option>
-        </select></div>
-      <div><label class="f">Строк</label>
-        <select id="subLines"><option value="1">Одна строка</option><option value="2">До двух строк</option></select></div>
-      <div><label class="f">Анимация слова</label>
-        <select id="subAnim">
-          <option value="pop">Выпрыгивает</option><option value="bounce">Подпрыгивает</option><option value="fade">Плавно появляется</option>
-          <option value="rise">Выезжает снизу</option><option value="none">Без анимации</option>
-        </select></div>
-      <div><label class="f">Подчёркивание слова</label>
-        <select id="subUnder">
-          <option value="none">Нет</option><option value="line">Текущее слово</option><option value="grow">Линия растёт по ходу слова</option>
-          <option value="trail">Все сказанные слова</option>
-        </select></div>
-      <div><label class="f">Подложка</label>
-        <select id="subPlate">
-          <option value="none">Нет</option><option value="text">Под всем текстом</option><option value="word">Под текущим словом</option>
-          <option value="both">Под текстом + слово на цветном фоне</option>
-        </select></div>
-      <div><label class="f">Размер: <b id="subSizeVal" style="color:var(--text)">8%</b></label>
-        <input type="range" id="subSize" min="3" max="16" step="0.5" value="8"></div>
-      <div><label class="f">Обводка: <b id="subSwVal" style="color:var(--text)">18%</b></label>
-        <input type="range" id="subSw" min="0" max="30" step="1" value="18"></div>
-      <div><label class="f">Прозрачность подложки: <b id="subPlateOpVal" style="color:var(--text)">60%</b></label>
-        <input type="range" id="subPlateOp" min="10" max="100" step="5" value="60"></div>
-      <div><label class="f">По высоте: <b id="subYVal" style="color:var(--text)">70%</b> <span class="hint">(для каждого формата — своя)</span></label>
-        <input type="range" id="subY" min="8" max="94" step="1" value="70"></div>
-      <div><label class="f">По ширине: <b id="subXVal" style="color:var(--text)">центр</b></label>
-        <input type="range" id="subX" min="-30" max="30" step="1" value="0"></div>
-      <div><label class="f">Сдвиг по времени: <b id="subShiftVal" style="color:var(--text)">0,00 с</b></label>
-        <input type="range" id="subShift" min="-0.5" max="0.5" step="0.05" value="0"></div>
-    </div>
-    <div class="colors">
-      <label>Текст <input type="color" id="subFill" value="#ffffff"></label>
-      <label>Текущее слово <input type="color" id="subHi" value="#ffd400"></label>
-      <label>Обводка <input type="color" id="subStroke" value="#000000"></label>
-      <label>Подложка <input type="color" id="subPlateColor" value="#000000"></label>
-      <label><input type="checkbox" id="subGlow"> Свечение <input type="color" id="subGlowColor" value="#00e5ff"></label>
-      <label>Линия <input type="color" id="subUlColor" value="#ffd400"></label>
-      <label><input type="checkbox" id="subShadow" checked> Тень</label>
-      <label><input type="checkbox" id="subUpper" checked> ЗАГЛАВНЫЕ</label>
-      <label title="Только на превью: где у YouTube Shorts кнопки и подпись"><input type="checkbox" id="subSafe"> Зоны YouTube Shorts</label>
-    </div>
+    <details class="vblock" id="subSetBox">
+      <summary><span class="vbt">🎛 Настройки субтитров</span> <span class="hint">шрифт, размер, цвета, положение</span><span class="chev">▾</span></summary>
+      <label class="chk" style="margin-top:12px" title="Пока выключено, ползунки не сдвинуть случайно пальцем"><input type="checkbox" id="subUnlock"> ✏ Менять ползунки</label>
+      <div class="grid" style="margin-top:10px">
+        <div><label class="f">Шрифт</label>
+          <select id="subFont">
+            <option value="montserrat">Montserrat — жирный</option><option value="russo">Russo One</option><option value="rubik">Rubik</option>
+            <option value="oswald">Oswald — узкий</option><option value="unbounded">Unbounded — широкий</option><option value="comfortaa">Comfortaa — округлый</option>
+            <option value="exo">Exo 2 — игровой</option>
+            <option value="manrope">Manrope — спокойный, классика</option><option value="ptserif">PT Serif — с засечками</option><option value="playfair">Playfair — кино, с засечками</option>
+          </select></div>
+        <div><label class="f">Слов на экране</label>
+          <select id="subWords">
+            <option value="1">По одному</option><option value="2" selected>По 1–2</option><option value="3">По 2–3</option>
+            <option value="5">По 4–5</option><option value="8">Фраза целиком (как на YouTube)</option>
+          </select></div>
+        <div><label class="f">Строк</label>
+          <select id="subLines"><option value="1">Одна строка</option><option value="2">До двух строк</option></select></div>
+        <div><label class="f">Анимация слова</label>
+          <select id="subAnim">
+            <option value="pop">Выпрыгивает</option><option value="bounce">Подпрыгивает</option><option value="fade">Плавно появляется</option>
+            <option value="rise">Выезжает снизу</option><option value="none">Без анимации</option>
+          </select></div>
+        <div><label class="f">Подчёркивание слова</label>
+          <select id="subUnder">
+            <option value="none">Нет</option><option value="line">Текущее слово</option><option value="grow">Линия растёт по ходу слова</option>
+            <option value="trail">Все сказанные слова</option>
+          </select></div>
+        <div><label class="f">Подложка</label>
+          <select id="subPlate">
+            <option value="none">Нет</option><option value="text">Под всем текстом</option><option value="word">Под текущим словом</option>
+            <option value="both">Под текстом + слово на цветном фоне</option>
+          </select></div>
+        <div><label class="f">Размер: <b id="subSizeVal" style="color:var(--text)">8%</b></label>
+          <input type="range" id="subSize" min="3" max="16" step="0.5" value="8"></div>
+        <div><label class="f">Обводка: <b id="subSwVal" style="color:var(--text)">18%</b></label>
+          <input type="range" id="subSw" min="0" max="30" step="1" value="18"></div>
+        <div><label class="f">Прозрачность подложки: <b id="subPlateOpVal" style="color:var(--text)">60%</b></label>
+          <input type="range" id="subPlateOp" min="10" max="100" step="5" value="60"></div>
+        <div><label class="f">По высоте: <b id="subYVal" style="color:var(--text)">70%</b> <span class="hint">(для каждого формата — своя)</span></label>
+          <input type="range" id="subY" min="8" max="94" step="1" value="70"></div>
+        <div><label class="f">По ширине: <b id="subXVal" style="color:var(--text)">центр</b></label>
+          <input type="range" id="subX" min="-30" max="30" step="1" value="0"></div>
+        <div><label class="f">Сдвиг по времени: <b id="subShiftVal" style="color:var(--text)">0,00 с</b></label>
+          <input type="range" id="subShift" min="-0.5" max="0.5" step="0.05" value="0"></div>
+      </div>
+      <div class="colors">
+        <label>Текст <input type="color" id="subFill" value="#ffffff"></label>
+        <label>Текущее слово <input type="color" id="subHi" value="#ffd400"></label>
+        <label>Обводка <input type="color" id="subStroke" value="#000000"></label>
+        <label>Подложка <input type="color" id="subPlateColor" value="#000000"></label>
+        <label><input type="checkbox" id="subGlow"> Свечение <input type="color" id="subGlowColor" value="#00e5ff"></label>
+        <label>Линия <input type="color" id="subUlColor" value="#ffd400"></label>
+        <label><input type="checkbox" id="subShadow" checked> Тень</label>
+        <label><input type="checkbox" id="subUpper" checked> ЗАГЛАВНЫЕ</label>
+        <label title="Только на превью: где у YouTube Shorts кнопки и подпись"><input type="checkbox" id="subSafe"> Зоны YouTube Shorts</label>
+      </div>
+    </details>
     <div class="row" style="margin-top:14px">
       <button class="btn" id="audBtn" title="Whisper слушает звук самого видео: текст с таймкодами попадает в сценарий, субтитры — с точным временем слов. Озвучка не нужна">🎧 Субтитры по голосу из видео</button>
       <select id="audLang" style="width:auto" title="На каком языке говорят в видео"><option value="ru">речь RU</option><option value="en">речь EN</option></select>
