@@ -442,5 +442,5 @@
 
   @media (max-width: 520px) { .vmodes > .hint { flex-basis: 100%; } }
   /* кнопка «Озвучить» — по центру, подсказка строкой под ней */
-  .gorow { justify-content: center; text-align: center; }
+  .gorow { justify-content: center; text-align: center; margin: 28px 0 24px; row-gap: 10px; }
   .gorow > .hint { flex-basis: 100%; }
