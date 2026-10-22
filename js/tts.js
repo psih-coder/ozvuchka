@@ -53,7 +53,9 @@ async function ttsOne(pid, text) {
   if (o.el && o.tag && !/^\s*\[/.test(text)) text = `${o.tag} ${text}`;
   const body = { model: m.id, input: text, voice: o.voice };
   if (m.fmt) body.response_format = m.fmt;
-  if (m.instr && o.style) body.instructions = o.style;
+  // характер и акцент: OpenAI понимает instructions; Gemini через Polza их не получает — ему манера идёт перед текстом по-английски («Say …: текст»)
+  if (m.instr && o.style && !m.inline) body.instructions = o.style;
+  if (m.inline && o.style) body.input = `Say ${o.style}: ${text}`;
   if (m.langCode) body.language_code = lang;
   if (o.el) { body.stability = o.stability; body.similarity_boost = o.similarity; }
   let r;

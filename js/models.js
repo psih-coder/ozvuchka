@@ -98,10 +98,10 @@ const mai = (sfx) => ({
 });
 // ok — проверено на реальных запросах; цена — ₽ за 1000 символов по каталогу Polza
 const TTS_MODELS = [
-  { id: "google/gemini-3.8-flash-tts", name: "Gemini 3.8 Flash TTS — выразительный ✔", voices: GEM30, instr: 1, fmt: "wav", price: "≈2,5 ₽", def: { ru: "Charon", en: "Puck" } },
-  { id: "google/gemini-3.8-flash-lite-tts", name: "Gemini 3.8 Flash Lite TTS — почти бесплатно ✔", voices: GEM30, instr: 1, fmt: "wav", price: "≈0,02 ₽", def: { ru: "Charon", en: "Puck" } },
+  { id: "google/gemini-3.8-flash-tts", name: "Gemini 3.8 Flash TTS — выразительный, понимает характер ✔", voices: GEM30, instr: 1, inline: 1, fmt: "wav", price: "≈2,5 ₽", def: { ru: "Charon", en: "Puck" } },
+  { id: "google/gemini-3.8-flash-lite-tts", name: "Gemini 3.8 Flash Lite TTS — почти бесплатно, без характера ✔", voices: GEM30, noStyle: 1, fmt: "wav", price: "≈0,02 ₽", def: { ru: "Charon", en: "Puck" } },
   { id: "elevenlabs/eleven-v4", name: "ElevenLabs v4 — новейшая, эмоции тегами [laughs]", voices: EL22, fmt: "mp3", el: 1, price: "≈2,3 ₽", def: { ru: "JBFqnCBsd6RMkjVDRZzb", en: "nPczCjzI2devNBz1zQrb" } },
-  { id: "google/gemini-3.1-flash-tts-preview", name: "Gemini 3.1 Flash TTS Preview", voices: GEM11, instr: 1, fmt: "wav", price: "≈0,03 ₽", def: { ru: "Charon", en: "Puck" } },
+  { id: "google/gemini-3.1-flash-tts-preview", name: "Gemini 3.1 Flash TTS Preview", voices: GEM11, noStyle: 1, fmt: "wav", price: "≈0,03 ₽", def: { ru: "Charon", en: "Puck" } },
   { id: "openai/gpt-4o-mini-tts", name: "OpenAI gpt-4o-mini-tts — слушается манеры речи", voices: oai(Object.keys(OAI_D)), instr: 1, fmt: "wav", price: "≈1 ₽", def: { ru: "onyx", en: "ash" } },
   { id: "openai/tts-1-hd", name: "OpenAI TTS-1 HD", voices: oai(["alloy", "ash", "coral", "echo", "fable", "onyx", "nova", "sage", "shimmer"]), fmt: "wav", price: "≈3,5 ₽", def: { ru: "onyx", en: "ash" } },
   { id: "openai/tts-1", name: "OpenAI TTS-1", voices: oai(["alloy", "ash", "coral", "echo", "fable", "onyx", "nova", "sage", "shimmer"]), fmt: "wav", price: "≈1,8 ₽", def: { ru: "onyx", en: "ash" } },
@@ -127,13 +127,13 @@ function fillVoices(pid, keep) {
   if ($("el_" + pid)) { $("el_" + pid).hidden = !m.el; $("tvc_" + pid).hidden = !(m.el && sel.value === "custom"); }
   if ($("instrNote_" + pid)) {
     $("instrNote_" + pid).hidden = !!m.instr;
-    $("instrNote_" + pid).textContent = m.el ? "ElevenLabs не понимает манеру и акцент. Характер передаётся тегом эмоции (шёпот, крик, азарт, сарказм, вздох)." : "Эта модель не понимает манеру, акцент и характер — выберите Gemini или gpt-4o-mini-tts.";
+    $("instrNote_" + pid).textContent = m.el ? "ElevenLabs не понимает манеру и акцент. Характер передаётся тегом эмоции (шёпот, крик, азарт, сарказм, вздох)." : "Эта модель не понимает манеру, акцент и характер (проверено). Нужен характер — выберите Gemini 3.8 Flash (лучше всего) или gpt-4o-mini-tts.";
   }
   $("ts_" + pid).title = m.instr ? "" : "Эта модель не понимает подсказку о манере речи";
 }
 function vset(pid) {
   if (!pid || !prof(pid)) return { model: "", voice: "", style: "", none: true };
-  const lang = prof(pid).lang, m = ttsModel($("tm_" + pid).value), i = lang === "en" ? 3 : 2;
+  const lang = prof(pid).lang, m = ttsModel($("tm_" + pid).value), i = 3;   // манера по-английски — так проверено (22.10.2026), модели понимают её лучше
   let style = "";
   if (m.instr) {
     const ch = CHARS.find((x) => x[0] === $("chr_" + pid).value), ac = ACCENTS.find((x) => x[0] === $("acc_" + pid).value);
