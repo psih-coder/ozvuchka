@@ -323,7 +323,7 @@
     max-width: none; max-height: none; aspect-ratio: auto; border-radius: 0; box-shadow: none; clip-path: none; background: #000; }
   .screen.fsfake .subcan, .screen.fsfake .grade { inset: auto; }
   body.fsbody { overflow: hidden; }
-  #voicesBox { border: 1px solid rgba(255,79,154,.5); background: linear-gradient(135deg, rgba(255,79,154,.12), rgba(255,159,67,.06)); box-shadow: 0 0 0 3px rgba(255,79,154,.06); }
+  #voicesBox { border: 1px solid rgba(255,159,67,.55); background: linear-gradient(135deg, rgba(255,159,67,.13), rgba(255,210,63,.05)); box-shadow: 0 0 0 3px rgba(255,159,67,.07); }   /* оранжевый — не сливается с розовой «Целиком» */
   #voicesBox > summary { list-style: none; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 4px 0; }
   #voicesBox > summary .vbt { font-size: 16.5px; font-weight: 800; }
   #voicesBox > summary .chev { margin-left: auto; }
@@ -405,7 +405,10 @@
   .menu[open] .dd { transform: rotate(180deg); }
   .pop { position: absolute; right: 0; top: calc(100% + 8px); z-index: 60; width: 300px; max-width: calc(100vw - 24px); display: grid; gap: 8px; padding: 12px;
     background: #14161e; border: 1px solid var(--line2); border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.55); }
+  .pop { grid-template-columns: minmax(0, 1fr); }   /* иначе поле ключа не сжимается и «Проверить» вылезает на телефоне */
+  .pop .keybox { min-width: 0; }
   .pop .keybox input { flex: 1; width: auto; min-width: 0; }
+  .pop .keybox .btn { flex: none; }
   .mi { display: grid; gap: 2px; text-align: left; background: transparent; border: 0; color: var(--text); padding: 9px 10px; border-radius: 10px; cursor: pointer; font: 700 14px Manrope, sans-serif; }
   .mi:hover { background: var(--card2); }
   .mi small { color: var(--muted); font-weight: 500; font-size: 12px; }

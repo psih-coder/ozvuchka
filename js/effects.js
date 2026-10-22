@@ -35,10 +35,13 @@ const CHARS = [
   ["nervous", "Нервно", "нервно и торопливо", "nervous and hurried"],
 ];
 // звуковые эффекты — считаются здесь же, в браузере, бесплатно (озвучку заново не просят)
-const FX_DEF = { pitch: 0, echo: 0, echoT: 260, rev: 0, room: 1.6, noise: 0, noiseT: "hiss", dist: 0, filter: "none", robot: 0, comp: 1 };
+const FX_DEF = { pitch: 0, bass: 0, echo: 0, echoT: 260, rev: 0, room: 1.6, noise: 0, noiseT: "hiss", dist: 0, filter: "none", robot: 0, comp: 1 };
 const FX_PRESETS = {
   normal: ["Обычный", {}],
   clear: ["Чётко и плотно", { filter: "bright", comp: 1 }],
+  high: ["Высокий голос", { pitch: 3, filter: "bright" }],
+  low: ["Низкий голос", { pitch: -3, bass: 25 }],
+  bass: ["Бас", { bass: 60, filter: "warm" }],
   squeak: ["Писклявый", { pitch: 6 }],
   chipmunk: ["Бурундук", { pitch: 11 }],
   deep: ["Низкий, брутальный", { pitch: -4, filter: "warm" }],
@@ -59,6 +62,7 @@ const fxHtml = (pid) => `<details class="fxbox" data-fx="${pid}">
     <div class="fxchips" id="fxChips_${pid}">${Object.entries(FX_PRESETS).map(([k, [n]]) => `<button class="chip" data-fxp="${k}" data-lang="${pid}">${n}</button>`).join("")}</div>
     <div class="fxgrid">
       <div><label class="f">Тон: <b id="fx_${pid}_pitchV">0</b></label><input type="range" id="fx_${pid}_pitch" min="-12" max="12" step="1" value="0" title="Выше — писклявее, ниже — басовитее"></div>
+      <div><label class="f">Бас: <b id="fx_${pid}_bassV">0%</b></label><input type="range" id="fx_${pid}_bass" min="0" max="100" step="5" value="0" title="Больше низких частот — голос гуще и мощнее"></div>
       <div><label class="f">Эхо: <b id="fx_${pid}_echoV">0%</b></label><input type="range" id="fx_${pid}_echo" min="0" max="100" step="5" value="0"></div>
       <div><label class="f">Задержка эха: <b id="fx_${pid}_echoTV">260 мс</b></label><input type="range" id="fx_${pid}_echoT" min="60" max="700" step="10" value="260"></div>
       <div><label class="f">Реверберация: <b id="fx_${pid}_revV">0%</b></label><input type="range" id="fx_${pid}_rev" min="0" max="100" step="5" value="0"></div>
@@ -77,12 +81,12 @@ const fxOf = (l) => {
   for (const k of Object.keys(FX_DEF)) { const el = $(`fx_${l}_${k}`); o[k] = el.type === "checkbox" ? (el.checked ? 1 : 0) : el.tagName === "SELECT" ? el.value : +el.value; }
   return o;
 };
-const fxNeutral = (f) => !f.pitch && !f.echo && !f.rev && !f.noise && !f.dist && !f.robot && f.filter === "none" && !f.comp;
+const fxNeutral = (f) => !f.pitch && !f.bass && !f.echo && !f.rev && !f.noise && !f.dist && !f.robot && f.filter === "none" && !f.comp;
 function fxLabels(l) {
   if (!$(`fx_${l}_pitch`)) return;
   const f = fxOf(l), pct = (k) => (($(`fx_${l}_${k}V`).textContent = f[k] + "%"));
   $(`fx_${l}_pitchV`).textContent = (f.pitch > 0 ? "+" : "") + f.pitch + (f.pitch ? (f.pitch > 0 ? " (писклявее)" : " (ниже)") : "");
-  ["echo", "rev", "noise", "dist", "robot"].forEach(pct);
+  ["bass", "echo", "rev", "noise", "dist", "robot"].forEach(pct);
   $(`fx_${l}_echoTV`).textContent = f.echoT + " мс"; $(`fx_${l}_roomV`).textContent = n1(f.room) + " с";
   const p = Object.entries(FX_PRESETS).find(([, [, o]]) => JSON.stringify({ ...FX_DEF, ...o }) === JSON.stringify(f));
   $("fxName_" + l).textContent = p ? p[1][0].toLowerCase() : "свой";
@@ -136,6 +140,8 @@ async function applyFxGraph(y, f) {
     old: () => { biq("highpass", 320); biq("lowpass", 2400); biq("peaking", 1000, 1, 5); },
     muffled: () => { biq("lowpass", 650, 0.9); biq("lowshelf", 150, 0.7, 3); },
   })[f.filter]?.();
+  // бас: подъём низких до +12 дБ, общий уровень чуть ниже, чтобы не хрипело
+  if (f.bass) { biq("lowshelf", 160, 0.7, f.bass / 100 * 12); const g = ctx.createGain(); g.gain.value = 1 / (1 + f.bass / 100 * 0.6); chain(g); }
   if (f.dist) { const ws = ctx.createWaveShaper(); ws.curve = distCurve(f.dist); ws.oversample = "4x"; chain(ws); const g = ctx.createGain(); g.gain.value = 1 / (1 + f.dist / 60); chain(g); }
   const bus = ctx.createGain();
   if (f.robot) {
