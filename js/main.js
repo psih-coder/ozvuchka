@@ -1,7 +1,7 @@
 "use strict";
 // ================= Проект =================
 $("projSave").onclick = () => {
-  if (!S.cues.length) return toast("Нечего сохранять — нет реплик");
+  if (!S.cues.length && !LANGS.some((l) => S.script[l].trim()) && !M.buf) return toast("Нечего сохранять — нет ни сценария, ни фраз");
   downloadBlob(new Blob([JSON.stringify(projData(), null, 1)], { type: "application/json" }), `${baseName()}_озвучка.json`);
 };
 $("projOpen").onclick = () => $("projInput").click();
@@ -26,7 +26,8 @@ loadSubFonts().then(drawOverlay);
 window.addEventListener("resize", () => { drawOverlay(); applyGradePreview(); });
 (function () {
   const p = LS.get("vo-project", null);
-  if (p?.cues?.length) { try { loadProj(p, true); hist.length = 0; if (p.video?.name) toast(`Восстановлен проект «${p.video.name}»: ${p.cues.length} реплик. Загрузите это видео.`); } catch {} }
+  // проект восстанавливаем и без фраз — если есть хотя бы сценарий
+  if (p && (p.cues?.length || p.script?.ru?.trim() || p.script?.en?.trim())) { try { loadProj(p, true); hist.length = 0; if (p.video?.name) toast(`Восстановлен проект «${p.video.name}»${p.cues.length ? `: ${p.cues.length} реплик` : ""}. Загрузите это видео.`); } catch {} }
   else { renderAll(); if (p?.music) for (const k of M_KEYS) if (p.music[k] != null) M[k] = p.music[k]; }
   restoreMusic();
 })();

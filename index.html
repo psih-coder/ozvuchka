@@ -274,7 +274,7 @@
     <div class="row gorow">
       <button class="btn bigbtn" id="voGo">🎙 Озвучить</button>
       <button class="btn ghost stop" id="vStop" hidden>⏹ Стоп</button>
-      <span class="hint" id="voHint">Повторно — бесплатно: неизменённые фразы берутся из памяти.</span>
+      <span class="hint" id="voHint"><b id="voCost"></b>Повторно — бесплатно: неизменённые фразы берутся из памяти.</span>
     </div>
     <progress id="vBar" value="0" max="100" hidden></progress>
     <ul class="log" id="vLog"></ul>
@@ -310,6 +310,7 @@
       </div>
       <div class="row" style="margin-top:12px">
         <label class="chk"><input type="checkbox" id="muDuck" checked> Приглушать под голосом</label>
+        <label class="chk" title="Если трек короче видео — выбранный кусок трека играет по кругу до конца видео"><input type="checkbox" id="muLoop"> 🔁 Повторять до конца видео</label>
         <span class="edrange">В видео с <input class="inp tin" id="muAt" title="Где в видео начинается музыка"> · трек с <input class="inp tin" id="muFrom" title="С какого места трека"> по <input class="inp tin" id="muTo" title="До какого места трека"></span>
       </div>
     </div>

@@ -2,6 +2,10 @@
 // ================= Музыка =================
 // трек лежит в браузере (IndexedDB), его настройки — в проекте; на таймлайне — своя дорожка ♪
 const mlen = () => Math.max(0, M.to - M.from);
+// сколько музыка звучит в видео: кусок трека один раз — или по кругу до конца видео
+const mspan = () => (M.loop && mlen() > 0.5 ? Math.max(0, totalDur() - M.at) : mlen());
+// какое место трека звучит в момент t видео
+const mpos = (t) => M.from + (M.loop && mlen() > 0.5 ? (t - M.at) % mlen() : t - M.at);
 function mdb() { return new Promise((res, rej) => { const r = indexedDB.open("vo-music", 1); r.onupgradeneeded = () => r.result.createObjectStore("f"); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
 async function mdbPut(file) {
   try { const db = await mdb(); await new Promise((res) => { const t = db.transaction("f", "readwrite"); if (file) t.objectStore("f").put(file, "track"); else t.objectStore("f").delete("track"); t.oncomplete = t.onerror = t.onabort = res; }); } catch {}
@@ -26,7 +30,7 @@ function voiceIv(l) {
 }
 // громкость музыки в момент t видео: громкость × плавные края × приглушение под голосом
 function musicEnv(t, iv) {
-  const a = M.at, b = M.at + mlen();
+  const a = M.at, b = M.at + mspan();
   if (!M.buf || t < a || t > b) return 0;
   let g = M.vol;
   if (M.fi > 0) g *= Math.min(1, (t - a) / M.fi);
@@ -41,22 +45,25 @@ function musicEnv(t, iv) {
 // прослушивание вместе с видео (вызывается из scheduleVoices)
 function scheduleMusic(t, rate, now) {
   if (!M.buf || !AC) return;
-  const a = M.at, b = a + mlen(); if (t >= b) return;
+  const a = M.at, b = a + mspan(); if (t >= b) return;
   const l = prevLang(), iv = l === "off" ? [] : voiceIv(l);
   const st = Math.max(t, a), when = now + (st - t) / rate, dur = b - st, step = 0.05;
   const cv = new Float32Array(Math.max(2, Math.ceil(dur / step) + 1));
   for (let i = 0; i < cv.length; i++) cv[i] = musicEnv(st + Math.min(dur, i * step), iv);
   const s = AC.createBufferSource(), g = AC.createGain();
   s.buffer = M.buf; s.playbackRate.value = rate;
+  if (M.loop) { s.loop = true; s.loopStart = M.from; s.loopEnd = M.to; }
   g.gain.value = cv[0]; g.gain.setValueCurveAtTime(cv, when, dur / rate);
-  s.connect(g); g.connect(AC.destination); s.start(when, M.from + (st - a), dur);
+  s.connect(g); g.connect(AC.destination); s.start(when, mpos(st), dur);
   live.push(s);
 }
 // для рендера: нужный кусок трека в частоте и каналах видео + громкость по времени (100 точек в секунду)
 async function musicFor(l, sr, nch, dur) {
   if (!M.buf || mlen() < 0.1 || M.at >= dur) return null;
-  const len = Math.min(mlen(), dur - M.at), ctx = new OfflineAudioContext(nch, Math.ceil(len * sr), sr), s = ctx.createBufferSource();
-  s.buffer = M.buf; s.connect(ctx.destination); s.start(0, M.from, len);
+  const len = Math.min(mspan(), dur - M.at), ctx = new OfflineAudioContext(nch, Math.ceil(len * sr), sr), s = ctx.createBufferSource();
+  s.buffer = M.buf; s.connect(ctx.destination);
+  if (M.loop) { s.loop = true; s.loopStart = M.from; s.loopEnd = M.to; }
+  s.start(0, M.from, len);
   const r = await ctx.startRendering(), iv = voiceIv(l), env = new Float32Array(Math.ceil(dur * 100) + 2);
   for (let i = 0; i < env.length; i++) env[i] = musicEnv(i / 100, iv);
   return { chs: Array.from({ length: nch }, (_, i) => r.getChannelData(i)), env, at: M.at, n: r.length };
@@ -76,13 +83,15 @@ function muUI() {
   for (const [id, [k, f]] of Object.entries(MU_R)) $(id).value = M[k] * f;
   $("muDuck").checked = M.duck; $("muDuckLvl").closest("div").style.opacity = M.duck ? "" : ".5";
   $("muAt").value = fmt(M.at); $("muFrom").value = fmt(M.from); $("muTo").value = fmt(M.to);
-  $("musicSum").textContent = on ? `· ${M.name.replace(/\.[^.]+$/, "")}, ${Math.round(M.vol * 100)}%${M.duck ? ", тише под голосом" : ""}` : "· нет";
+  $("muLoop").checked = M.loop;
+  $("musicSum").textContent = on ? `· ${M.name.replace(/\.[^.]+$/, "")}, ${Math.round(M.vol * 100)}%${M.duck ? ", тише под голосом" : ""}${M.loop ? ", по кругу" : ""}` : "· нет";
   muLabels(); rInfo();
 }
 let muT;
 function muChanged() { muLabels(); drawTL(); clearTimeout(muT); muT = setTimeout(() => { save(); muUI(); if (!V.paused) scheduleVoices(); }, 200); }
 for (const [id, [k, f]] of Object.entries(MU_R)) $(id).addEventListener("input", () => { M[k] = +$(id).value / f; muChanged(); });
 $("muDuck").addEventListener("change", () => { M.duck = $("muDuck").checked; muChanged(); });
+$("muLoop").addEventListener("change", () => { M.loop = $("muLoop").checked; muChanged(); });
 for (const [id, k] of [["muAt", "at"], ["muFrom", "from"], ["muTo", "to"]]) $(id).addEventListener("change", () => {
   const t = parseTime($(id).value);
   if (isFinite(t) && M.buf) {

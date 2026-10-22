@@ -116,6 +116,7 @@ $("vCards").addEventListener("input", (e) => {
   const card = e.target.closest(".vcard"); if (!card) return;
   const pid = card.dataset.pid, id = e.target.id || "";
   if (id.startsWith("fx_")) { fxLabels(pid); fxChanged(pid); }
+  if (/^(tm|tv|chr|acc|ts)_/.test(id)) voCost();
   if (id.startsWith("els_") || id.startsWith("elm_")) elLabels(pid);
 });
 $("vCards").addEventListener("change", (e) => {

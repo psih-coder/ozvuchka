@@ -97,19 +97,21 @@ function paintTL() {
   ctx.fillStyle = "rgba(62,230,255,.7)"; ctx.fillText("EN", W - 18, Y.enY + 3);
   // музыка: своя дорожка с волной; края — обрезка, тело — сдвиг
   if (M.buf) {
-    const a = M.at, b = M.at + mlen(), x0 = xOf(a), x1 = xOf(b), w = Math.max(3, x1 - x0), sel = TL.drag?.mode?.[0] === "m";
+    const a = M.at, b = M.at + mspan(), x0 = xOf(a), x1 = xOf(b), w = Math.max(3, x1 - x0), sel = TL.drag?.mode?.[0] === "m";
     if (x1 >= 0 && x0 <= W) {
       ctx.save(); rr(ctx, x0, Y.muY, w, Y.muH, 7); ctx.fillStyle = sel ? "rgba(61,220,151,.32)" : "rgba(61,220,151,.16)"; ctx.fill();
       ctx.lineWidth = 1; ctx.strokeStyle = sel ? "rgba(255,255,255,.75)" : "rgba(61,220,151,.6)"; ctx.stroke(); ctx.clip();
       const pk = M.peaks, mid = Y.muY + Y.muH / 2, dur = M.buf.duration, iv = M.duck ? voiceIv(prevLang() === "en" ? "en" : "ru") : [];
       ctx.fillStyle = "rgba(61,220,151,.8)";
       for (let x = Math.max(0, Math.floor(x0)); x < Math.min(W, x1); x += 2) {
-        const t = tOf(x), ft = M.from + (t - a), p = pk[Math.min(pk.length - 1, Math.max(0, Math.floor(ft / dur * pk.length)))] || 0;
+        const t = tOf(x), ft = mpos(t), p = pk[Math.min(pk.length - 1, Math.max(0, Math.floor(ft / dur * pk.length)))] || 0;
         const h = Math.max(1, p * (Y.muH - 6) * Math.min(1, musicEnv(t, iv) / Math.max(0.05, M.vol)));
         ctx.fillRect(x, mid - h / 2, 1.5, h);
       }
-      ctx.fillStyle = "#fff"; if (w > 14) { ctx.fillRect(x0 + 3, Y.muY + 8, 2, Y.muH - 16); ctx.fillRect(x1 - 5, Y.muY + 8, 2, Y.muH - 16); }
-      if (w > 60) { ctx.font = "700 10px Manrope, sans-serif"; ctx.fillStyle = "#eafff4"; ctx.fillText("♪ " + M.name, Math.max(x0, 0) + 9, Y.muY + 9); }
+      ctx.fillStyle = "#fff"; if (w > 14) { ctx.fillRect(x0 + 3, Y.muY + 8, 2, Y.muH - 16); if (!M.loop) ctx.fillRect(x1 - 5, Y.muY + 8, 2, Y.muH - 16); }
+      // по кругу: тонкие метки там, где трек начинается заново
+      if (M.loop && mlen() > 0.5) { ctx.fillStyle = "rgba(255,255,255,.35)"; for (let t = a + mlen(); t < b; t += mlen()) ctx.fillRect(xOf(t), Y.muY + 3, 1, Y.muH - 6); }
+      if (w > 60) { ctx.font = "700 10px Manrope, sans-serif"; ctx.fillStyle = "#eafff4"; ctx.fillText((M.loop ? "🔁 " : "♪ ") + M.name, Math.max(x0, 0) + 9, Y.muY + 9); }
       ctx.restore();
     }
     ctx.font = "700 9px 'JetBrains Mono', monospace"; ctx.fillStyle = "rgba(61,220,151,.75)"; ctx.fillText("♪", W - 14, Y.muY + Y.muH / 2);
@@ -141,10 +143,10 @@ function hitCue(x, y) {
 }
 function hitMusic(x, y) {
   if (!M.buf || y < Y.muY - 2 || y > Y.muY + Y.muH + 2) return null;
-  const x0 = xOf(M.at), x1 = xOf(M.at + mlen());
+  const x0 = xOf(M.at), x1 = xOf(M.at + mspan());
   if (x < x0 - 6 || x > x1 + 6) return null;
   if (Math.abs(x - x0) <= 8) return "ml";
-  if (Math.abs(x - x1) <= 8) return "mr";
+  if (Math.abs(x - x1) <= 8 && !M.loop) return "mr";   // по кругу конец — это конец видео
   return "mb";
 }
 function snapT(t, c) {

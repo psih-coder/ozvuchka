@@ -8,6 +8,7 @@ function accSums() {
 }
 // шаги 2 и 3: сколько текста и сколько озвучено — видно и в свёрнутом виде
 function stepSums() {
+  voCost();
   const sc = LANGS.map((l) => [l, plainText(S.script[l], l).replace(/\s+/g, " ").trim().length]).filter(([, n]) => n).map(([l, n]) => `${l.toUpperCase()} ${n} симв.`);
   $("scriptSum").textContent = "· " + (sc.length ? sc.join(", ") : "пусто");
   const vo = LANGS.map((l) => { const w = S.cues.filter((c) => c[l].trim()); return w.length ? `${l.toUpperCase()} ${w.filter((c) => voiceFresh(c, l)).length} из ${w.length}` : ""; }).filter(Boolean);

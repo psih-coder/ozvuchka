@@ -2,7 +2,7 @@
 // ================= Шаг 3. Озвучка: из сценария — в фразы — в голос =================
 const vmode = () => document.querySelector("input[name=vmode]:checked")?.value || "solid";
 function setVmode(v) { $("voiceCard").dataset.vmode = v; const r = document.querySelector(`input[name=vmode][value="${v}"]`); if (r) r.checked = true; }
-document.querySelectorAll("input[name=vmode]").forEach((r) => r.addEventListener("change", () => { setVmode(vmode()); saveSet(); }));
+document.querySelectorAll("input[name=vmode]").forEach((r) => r.addEventListener("change", () => { setVmode(vmode()); saveSet(); voCost(); }));
 ["fsSplit", "fsPlace", "fsGap"].forEach((id) => $(id).addEventListener("input", () => { $("fsGapV").textContent = n1($("fsGap").value) + " с"; saveSet(); }));
 function fillSolSel() {
   document.querySelectorAll(".solvsel").forEach((sel) => {
@@ -12,7 +12,7 @@ function fillSolSel() {
   });
   $("voicesSum").textContent = `(${VOICES.length}: ${VOICES.map((v) => v.name).join(", ")})`;
 }
-document.querySelectorAll(".solvsel").forEach((s) => s.addEventListener("change", saveSet));
+document.querySelectorAll(".solvsel").forEach((s) => s.addEventListener("change", () => { saveSet(); voCost(); }));
 // предложения; «короткие куски» ещё режутся по запятым
 function sentences(text, maxChars) {
   const parts = (text.match(/[^.!?…]+(?:[.!?…]+["»”)]*|$)/g) || [text]).map((x) => x.trim()).filter(Boolean);
@@ -82,6 +82,18 @@ function buildCues(mode, langs) {
   return { cues, warns };
 }
 const voLangs = () => LANGS.filter((l) => $(l === "ru" ? "voRu" : "voEn").checked);
+// сколько спишется за озвучку — до нажатия: символы сценария × цена модели (₽ за 1000 символов); неизменённое из памяти бесплатно, так что это потолок
+const priceOf = (pid) => { const p = String(ttsModel(vset(pid).model).price || "").match(/\d+(?:[.,]\d+)?/); return p ? +p[0].replace(",", ".") : 0; };
+function voCost() {
+  const langs = voLangs().filter((l) => S.script[l].trim());
+  let sum = 0;
+  for (const l of langs) {
+    const pid = (vmode() === "solid" && $("solV_" + l).value) || voicesOf(l)[0]?.id;
+    if (pid) sum += plainText(S.script[l], l).replace(/\s+/g, " ").trim().length / 1000 * priceOf(pid);
+  }
+  $("voCost").textContent = langs.length ? `Озвучка ≈ ${sum < 0.01 ? "меньше 0,01" : sum.toFixed(2).replace(".", ",")} ₽ · ` : "";
+}
+["voRu", "voEn"].forEach((id) => $(id).addEventListener("change", () => { voCost(); saveSet(); }));
 $("voGo").onclick = async () => {
   const langs = voLangs().filter((l) => S.script[l].trim());
   if (!langs.length) {

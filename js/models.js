@@ -98,11 +98,11 @@ const mai = (sfx) => ({
 });
 // ok — проверено на реальных запросах; цена — ₽ за 1000 символов по каталогу Polza
 const TTS_MODELS = [
-  { id: "google/gemini-3.8-flash-tts", name: "Gemini 3.8 Flash TTS — выразительный, понимает характер ✔", voices: GEM30, instr: 1, inline: 1, fmt: "wav", price: "≈2,5 ₽", def: { ru: "Charon", en: "Puck" } },
-  { id: "google/gemini-3.8-flash-lite-tts", name: "Gemini 3.8 Flash Lite TTS — почти бесплатно, без характера ✔", voices: GEM30, noStyle: 1, fmt: "wav", price: "≈0,02 ₽", def: { ru: "Charon", en: "Puck" } },
+  { id: "google/gemini-3.8-flash-tts", name: "Gemini 3.8 Flash TTS — выразительный, понимает характер ✔", voices: GEM30, instr: 1, inline: 1, fmt: "wav", price: "≈1,6 ₽", def: { ru: "Charon", en: "Puck" } },
+  { id: "google/gemini-3.8-flash-lite-tts", name: "Gemini 3.8 Flash Lite TTS — почти бесплатно, без характера ✔", voices: GEM30, noStyle: 1, fmt: "wav", price: "≈1,1 ₽", def: { ru: "Charon", en: "Puck" } },
   { id: "elevenlabs/eleven-v4", name: "ElevenLabs v4 — новейшая, эмоции тегами [laughs]", voices: EL22, fmt: "mp3", el: 1, price: "≈2,3 ₽", def: { ru: "JBFqnCBsd6RMkjVDRZzb", en: "nPczCjzI2devNBz1zQrb" } },
   { id: "google/gemini-3.1-flash-tts-preview", name: "Gemini 3.1 Flash TTS Preview", voices: GEM11, noStyle: 1, fmt: "wav", price: "≈0,03 ₽", def: { ru: "Charon", en: "Puck" } },
-  { id: "openai/gpt-4o-mini-tts", name: "OpenAI gpt-4o-mini-tts — слушается манеры речи", voices: oai(Object.keys(OAI_D)), instr: 1, fmt: "wav", price: "≈1 ₽", def: { ru: "onyx", en: "ash" } },
+  { id: "openai/gpt-4o-mini-tts", name: "OpenAI gpt-4o-mini-tts — слушается манеры речи", voices: oai(Object.keys(OAI_D)), instr: 1, fmt: "wav", price: "≈2,1 ₽", def: { ru: "onyx", en: "ash" } },
   { id: "openai/tts-1-hd", name: "OpenAI TTS-1 HD", voices: oai(["alloy", "ash", "coral", "echo", "fable", "onyx", "nova", "sage", "shimmer"]), fmt: "wav", price: "≈3,5 ₽", def: { ru: "onyx", en: "ash" } },
   { id: "openai/tts-1", name: "OpenAI TTS-1", voices: oai(["alloy", "ash", "coral", "echo", "fable", "onyx", "nova", "sage", "shimmer"]), fmt: "wav", price: "≈1,8 ₽", def: { ru: "onyx", en: "ash" } },
   { id: "microsoft/mai-voice-2", name: "Microsoft MAI-Voice-2 — родные RU и EN голоса", voices: mai("MAI-Voice-2"), price: "≈2,6 ₽" },

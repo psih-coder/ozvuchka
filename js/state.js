@@ -3,8 +3,8 @@
 const V = $("vid");
 const S = { ver: 0, file: null, url: "", name: "", dur: 0, w: 0, h: 0, arAuto: "16:9", cues: [], sel: null, nextId: 1, aiStop: false, vStop: false, tab: "manual" };
 // фоновая музыка: at — где в видео начинается, from/to — какой кусок трека звучит; vol, приглушение под голосом, плавные края
-const M = { file: null, name: "", buf: null, peaks: null, at: 0, from: 0, to: 0, vol: 0.35, duck: true, duckLvl: 0.3, fi: 1, fo: 2 };
-const M_KEYS = ["name", "at", "from", "to", "vol", "duck", "duckLvl", "fi", "fo"];
+const M = { file: null, name: "", buf: null, peaks: null, at: 0, from: 0, to: 0, vol: 0.35, duck: true, duckLvl: 0.3, fi: 1, fo: 2, loop: false };
+const M_KEYS = ["name", "at", "from", "to", "vol", "duck", "duckLvl", "fi", "fo", "loop"];
 const newCue = (start, end = null) => ({ id: S.nextId++, start, end, ru: "", en: "", prompt: "", vp: { ru: null, en: null }, v: { ru: null, en: null } });
 // голоса (их может быть сколько угодно); у каждого свой язык
 let VOICES = [];
@@ -36,7 +36,16 @@ function undo() { const h = hist.pop(); if (!h) return toast("Нечего от�
 let saveT;
 function save() {
   clearTimeout(saveT);
-  saveT = setTimeout(() => LS.set("vo-project", projData()), 300);
+  saveT = setTimeout(() => { cuesToScript(); LS.set("vo-project", projData()); }, 300);
+}
+// субтитры из звука видео: правки фраз (тонкая настройка, таймлайн, «Сейчас») сразу попадают в сценарий,
+// а правки сценария — во фразы (syncFromScript). Пока печатают в окне сценария — не трогаем его
+function cuesToScript() {
+  const l = S.arec?.l;
+  if (!l || document.activeElement === $("edText") || S.cues.some((c) => LANGS.some((x) => c.v[x]))) return;
+  const t = S.cues.filter((c) => c[l].trim()).map((c) => `${fmt(c.start)} - ${fmt(effEnd(c))} ${c[l].replace(/\s*\n\s*/g, " ").trim()}`).join("\n");
+  if (t === S.script[l]) return;
+  S.script[l] = t; if (edCur === l) $("edText").value = t; edInfo();
 }
 function projData() {
   return { app: "voiceover", ver: 2, video: { name: S.name, dur: S.dur }, script: S.script, builtSig: S.builtSig || null, handEdited: !!S.handEdited, arec: S.arec || null, music: M.buf ? Object.fromEntries(M_KEYS.map((k) => [k, M[k]])) : null, cues: S.cues.map(({ start, end, ru, en, prompt, vp }) => ({ start, end, ru, en, prompt, vp })) };
@@ -52,6 +61,7 @@ function loadProj(p, quiet) {
   else if (S.cues.length) { S.handEdited = true; for (const l of LANGS) S.script[l] = S.cues.filter((c) => c[l].trim()).map((c) => `${fmt(c.start)} - ${fmt(effEnd(c))} ${c[l]}`).join("\n"); }
   if (typeof edShow === "function") edShow(edCur);
   renderAll(); save(); restoreVoices();
+  if (typeof muUI === "function") { muUI(); sizeTL(); }
   if (!quiet) toast(`Проект открыт: ${S.cues.length} реплик`);
   if (p.video?.name && S.file && p.video.name !== S.file.name) toast(`Проект был для «${p.video.name}» — загружено другое видео`);
 }
