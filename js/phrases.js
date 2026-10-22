@@ -102,7 +102,7 @@ $("voGo").onclick = async () => {
   }
   const mode = vmode(), sig = JSON.stringify([mode, langs, langs.map((l) => S.script[l]), rangeOf(), $("fsSplit").value, $("fsPlace").value, $("fsGap").value, mode === "solid" ? langs.map((l) => $("solV_" + l).value) : 0]);
   if (sig !== S.builtSig || !S.cues.length) {
-    const keep = S.cues.length && S.handEdited && !confirm("Фразы правились вручную в «Тонкой настройке». Собрать их заново из сценария?\n\nОК — заново из сценария, Отмена — озвучить фразы как есть.");
+    const keep = S.cues.length && S.handEdited && !confirm("Фразы правились вручную в «Настройке по таймкодам». Собрать их заново из сценария?\n\nОК — заново из сценария, Отмена — озвучить фразы как есть.");
     if (!keep) {
       const r = buildCues(mode, langs);
       if (!r.cues.length) return toast("В сценарии нет текста");
@@ -113,7 +113,7 @@ $("voGo").onclick = async () => {
   }
   await runV(() => synth(langs.filter((l) => S.cues.some((c) => c[l].trim()))));
 };
-// фразы с таймкодами — обратно в сценарий (после правок в «Тонкой настройке»)
+// фразы с таймкодами — обратно в сценарий (после правок в «Настройке по таймкодам»)
 $("toScript").onclick = () => {
   if (!S.cues.length) return toast("Фраз пока нет");
   if (LANGS.some((l) => S.script[l].trim()) && !confirm("Записать фразы с таймкодами в сценарий? Текущий текст сценария будет заменён.")) return;
